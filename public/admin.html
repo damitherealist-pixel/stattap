@@ -132,7 +132,7 @@ function card(c) {
   const d = trend(c);
   return `<article class="panel biz">
     <div class="row spread"><div class="row"><span class="dot" style="background:${esc(c.color)}"></span><h3>${esc(c.name)}</h3></div>
-      ${c.selfSignup ? '<span class="pill on">Signed up online</span>' : ''}</div>
+      <span class="row" style="gap:6px">${c.selfSignup ? '<span class="pill on">Signed up online</span>' : ''}<span class="pill ${c.autoGoogle ? 'on' : 'off'}">Google ${c.autoGoogle ? 'on' : 'off'}</span></span></div>
     <p class="note mono">${esc(reviewLink(c))}</p>
     <div class="row" style="gap:18px;font-variant-numeric:tabular-nums">
       <span><span class="note">Last 7 days</span><br><b style="font-family:var(--display);font-size:1.25rem">${fmt(c.stats.week.avg)}</b> ${d != null ? deltaHtml(d) : ''}</span>
@@ -181,12 +181,14 @@ function renderForm() {
         ? `<p class="note">Questions: ${esc((c.questions || []).map((q) => q.label).join(', '))}. These stay fixed so old and new scores line up.</p>`
         : `<label for="fInd">Type of business <small>Loads the five rating questions for that industry.</small><select id="fInd">${(industries.length ? industries : [{ id: 'restaurant', name: 'Restaurants' }]).map((x) => `<option value="${esc(x.id)}" ${x.id === c.industry ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>`}
       <label for="fColor">Brand color<input id="fColor" type="color" value="${esc(c.color)}"></label>
-      <p class="note">Every customer is offered this business's Google review page after they submit, whatever their rating. This can't be turned off, which keeps every business within Google's rules.</p>
+      <label class="switch" for="fAuto"><input type="checkbox" id="fAuto" ${c.autoGoogle !== false ? 'checked' : ''}><span class="track"></span><span>Send guests to Google after they submit</span></label>
+      <p class="note">Only you can change this; the business owner never sees it. When it's on, every guest is offered Google whatever their rating, which keeps the business within Google's rules.</p>
       <h3 style="margin-top:8px">Client login</h3>
       <p class="note">The business owner signs in at <span class="mono">${esc(location.origin)}/login</span> and sees only this business. They can never open this owner console.</p>
       <label for="fEmail">Login email<input id="fEmail" type="email" value="${esc(c.loginEmail)}" placeholder="owner@lunabistro.com" autocomplete="off"></label>
       <label for="fPass">${c.hasLogin ? 'New password <small>Leave blank to keep their current password. Or use Reset password on the business card.</small>' : 'Password <small>At least 8 characters. They choose their own the first time they sign in.</small>'}
         <span class="row" style="flex-wrap:nowrap"><input id="fPass" type="text" autocomplete="off" style="flex:1;min-width:0"><button class="btn" type="button" data-act="gen">Generate</button></span></label>
+      ${editing && c.hasLogin ? `<div class="row"><button class="btn" type="button" data-reset="${esc(c.id)}">Reset password</button><span class="note">Makes a temporary password and signs them out. They choose a new one at next sign-in.</span></div>` : ''}
       <div class="row"><button class="btn primary" type="submit" id="fSave">${editing ? 'Save changes' : 'Add business'}</button><span class="error" id="fMsg" role="alert"></span></div>
     </form>`;
 }
@@ -223,6 +225,13 @@ $('#main').addEventListener('click', async (e) => {
   if (b.dataset.act === 'gen') { $('#fPass').value = genPassword(); }
   if (b.dataset.act === 'copycreds' && creds) copy(`Your StatTap sign-in\nPage: ${location.origin}/login\nEmail: ${creds.email}\n${creds.reset ? 'Temporary password' : 'Password'}: ${creds.password}\nYou'll choose your own password when you sign in.`, b);
   if (b.dataset.link) copy(reviewLink(find(b.dataset.link) || b.dataset.link), b);
+  if (b.dataset.reset && view === 'form') {
+    try {
+      const d = await api('admin/reset-password', { method: 'POST', body: JSON.stringify({ id: b.dataset.reset }) });
+      creds = { name: d.name, email: d.email, password: d.password, reset: true }; renderForm();
+    } catch (err) { $('#fMsg').textContent = err.message; }
+    return;
+  }
   if (b.dataset.reset) { confirmReset = b.dataset.reset; renderList(); }
   if (b.dataset.act === 'resetno') { confirmReset = null; renderList(); }
   if (b.dataset.resetyes) {
@@ -251,7 +260,7 @@ $('#main').addEventListener('submit', async (e) => {
     try {
       const c = await api('admin/clients', { method: 'POST', body: JSON.stringify({
         id: editing?.id, name: $('#fName').value, google: $('#fGoogle').value, contact: $('#fContact').value,
-        color: $('#fColor').value, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
+        color: $('#fColor').value, autoGoogle: $('#fAuto').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
       if (pw) { creds = { name: c.name, email: c.loginEmail, password: pw }; renderForm(); }
       else { editing = null; go('list'); }
     } catch (err) { $('#fMsg').textContent = err.message; }

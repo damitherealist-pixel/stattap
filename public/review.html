@@ -105,7 +105,7 @@ function renderForm(c) {
     const g = googleUrl(c.google);
     // Copy now, while the tap still counts as the guest's action (phones block copying later).
     let copied = false;
-    if (g && body && navigator.clipboard) {
+    if (c.autoGoogle !== false && g && body && navigator.clipboard) {
       navigator.clipboard.writeText(body).then(() => { copied = true; }).catch(() => {});
     }
     $('#rSubmit').disabled = true; $('#rSubmit').textContent = 'Sending…'; $('#rErr').textContent = '';
@@ -124,8 +124,8 @@ function renderForm(c) {
 }
 
 function renderThanks(c, rating, body, wasCopied) {
-  // Every customer is offered Google, whatever their rating. This can't be switched off.
-  const g = googleUrl(c.google), low = rating <= 3, auto = !!g;
+  // Every customer is offered Google, whatever their rating, unless the StatTap owner switched it off.
+  const g = googleUrl(c.google), low = rating <= 3, auto = c.autoGoogle !== false && !!g;
   $('#card').innerHTML = `
     <div style="text-align:center">${starsText(rating)}</div>
     <h2 style="text-align:center">${low ? 'Thank you for telling us.' : 'Thank you!'}</h2>

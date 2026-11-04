@@ -6,8 +6,9 @@ import { timingSafeEqual, randomUUID, scryptSync, randomBytes, createHmac, rando
    - owner  : the SaaS owner. Manages every business. Signs in at /admin.html
    - client : a business owner. Sees only their own business. Signs in at /login
    - public : customers leaving a review (no login), and new businesses signing up
-   Google: every customer is always offered the business's Google review page.
-   Nobody (owner or client) can switch that off, which keeps every business within Google's rules.
+   Google: after submitting, every customer is offered the business's Google review page, whatever
+   their rating (no review gating). Only the owner can switch this on or off for a business;
+   clients can't change it. It's on by default.
 */
 
 const DAY = 86400000;
@@ -171,7 +172,7 @@ async function authenticate(s, req) {
 const publicClient = (c) => ({
   id: c.id, name: c.name, slug: c.slug || "", google: c.google || "", contact: c.contact || "",
   color: brandColor(c.color), questions: questionsOf(c),
-  autoGoogle: true, // always on; kept for pages that still read it
+  autoGoogle: c.autoGoogle !== false, // on unless the owner turned it off
 });
 const fullClient = (c) => ({
   ...publicClient(c), industry: c.industry || "restaurant", loginEmail: c.loginEmail || "",
@@ -314,7 +315,7 @@ export default async (req) => {
       const c = {
         id, name, slug, industry: ind.id, questions: q.qs,
         google: clean(b.google, 600), contact: clean(b.contact, 200), color: brandColor(b.color),
-        loginEmail: email, pwSalt: h.salt, pwHash: h.hash, ver: 1, selfSignup: true,
+        loginEmail: email, pwSalt: h.salt, pwHash: h.hash, ver: 1, selfSignup: true, autoGoogle: true,
         createdAt: new Date().toISOString(),
       };
       await s.setJSON(slugKey(slug), { clientId: id });
@@ -390,7 +391,8 @@ export default async (req) => {
         color: brandColor(b.color),
         createdAt: existing?.createdAt || new Date().toISOString(),
       };
-      delete c.autoGoogle;
+      if ("autoGoogle" in b) c.autoGoogle = !!b.autoGoogle;
+      else if (!existing) c.autoGoogle = true;
       // Industry and questions are set when the business is created. Changing them later would
       // mix old and new scores, so an existing business keeps its questions.
       if (!existing) {
@@ -502,7 +504,7 @@ export default async (req) => {
       if ("google" in b) c.google = clean(b.google, 600);
       if ("contact" in b) c.contact = clean(b.contact, 200);
       if ("color" in b) c.color = brandColor(b.color);
-      delete c.autoGoogle; // the Google step can't be turned off
+      if ("autoGoogle" in b && isOwner) c.autoGoogle = !!b.autoGoogle; // owner only; ignored from clients
       await s.setJSON(`clients/${c.id}`, c);
       return json(fullClient(c));
     }

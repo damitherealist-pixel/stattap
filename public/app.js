@@ -340,13 +340,29 @@
           </div>
           <form class="panel form" id="settingsForm">
             <h2>Google reviews</h2>
-            <p class="note">After submitting, every guest is offered your Google review page with their review already copied, so they only paste it and press Post. Every guest gets this whatever their rating, which keeps your business within Google's rules. Add your Google link below to turn it on.</p>
+            ${isOwner
+              ? `<label class="switch" for="sAuto"><input type="checkbox" id="sAuto" ${c.autoGoogle ? 'checked' : ''}><span class="track"></span><span>Send guests to Google after they submit</span></label>
+            <p class="note">Only you, the StatTap owner, can change this. The business owner doesn't see this switch. When it's on, every guest is offered Google whatever their rating, which keeps the business within Google's rules.</p>`
+              : `<p class="note">After submitting, every guest is offered your Google review page with their review already copied, so they only paste it and press Post. Every guest gets this whatever their rating, which keeps your business within Google's rules.</p>`}
             <label for="sGoogle">Google review link or Place ID<input id="sGoogle" type="text" value="${esc(c.google)}" placeholder="https://g.page/r/.../review"></label>
             <label for="sContact">Contact for unhappy guests <small>Shown to guests who rate 1–3 stars.</small><input id="sContact" type="text" value="${esc(c.contact)}" placeholder="manager@restaurant.com or phone"></label>
             <label for="sColor">Brand color<input id="sColor" type="color" value="${esc(c.color)}"></label>
             <div class="row"><button class="btn primary" type="submit">Save settings</button><span class="note" id="sMsg" role="status"></span></div>
           </form>
-          ${isOwner ? '' : `
+          ${isOwner ? `
+          <div class="panel stack" id="clientLogin">
+            <h2>Client login</h2>
+            ${c.hasLogin
+              ? `<p class="note">The business owner signs in at <span class="mono">${esc(location.origin)}/login</span> with <b>${esc(c.loginEmail)}</b>.${c.mustChange ? ' They still need to choose their own password.' : ''}</p>
+            ${st.reset
+              ? `<div class="callout"><dl class="creds"><dt>Email</dt><dd>${esc(st.reset.email)}</dd><dt>Temporary password</dt><dd>${esc(st.reset.password)}</dd></dl></div>
+            <p class="note">Send this to the business owner. It's shown only once. Their old password no longer works, and they'll choose a new one when they sign in.</p>
+            <div class="row"><button class="btn primary" type="button" data-act="copyreset">Copy details</button><button class="btn" type="button" data-act="resetdone">Done</button></div>`
+              : st.confirmReset
+                ? `<p class="note">This signs them out everywhere and makes a temporary password for you to send them.</p><div class="row"><button class="btn primary" type="button" data-act="resetyes">Make a temporary password</button><button class="btn" type="button" data-act="resetno">Cancel</button></div>`
+                : `<div class="row"><button class="btn" type="button" data-act="reset">Reset password</button><span class="note" id="rMsg" role="status"></span></div>`}`
+              : `<p class="note">This business doesn't have a client login yet. Add one from Edit on the Businesses page.</p>`}
+          </div>` : `
           <form class="panel form" id="pwForm">
             <h2>Change your password</h2>
             <label for="pCur">Current password<input id="pCur" type="password" autocomplete="current-password" required></label>
@@ -375,6 +391,18 @@
       if (act === 'print') window.print();
       if (act === 'copylink') copy(reviewLink(st.data.client), b);
       if (act === 'qr') { st.qr = !st.qr; renderPane(); }
+      if (act === 'reset') { st.confirmReset = true; renderPane(); }
+      if (act === 'resetno') { st.confirmReset = false; renderPane(); }
+      if (act === 'resetdone') { st.reset = null; renderPane(); }
+      if (act === 'copyreset' && st.reset) copy(`Your StatTap sign-in\nPage: ${location.origin}/login\nEmail: ${st.reset.email}\nTemporary password: ${st.reset.password}\nYou'll choose your own password when you sign in.`, b);
+      if (act === 'resetyes') {
+        b.disabled = true;
+        try {
+          st.reset = await api('admin/reset-password', { method: 'POST', body: JSON.stringify({ id: st.data.client.id }) });
+          st.data.client.mustChange = true;
+        } catch (err) { st.reset = null; }
+        st.confirmReset = false; renderPane();
+      }
     });
     root.addEventListener('change', async (e) => {
       const t = e.target;
@@ -387,11 +415,17 @@
       if (t.dataset.filter === 'status') { st.status = t.value; renderPane(); }
       if (t.dataset.filter === 'sort') { st.sort = t.value; renderPane(); }
       if (t.dataset.filter === 'week') { st.week = +t.value; renderPane(); }
+      if (t.id === 'sAuto' && isOwner) {
+        const msg = $('#sMsg', root);
+        const ok = await saveSettings({ autoGoogle: t.checked }, msg);
+        if (ok && msg) msg.textContent = t.checked ? 'Guests will now be sent to Google.' : 'Guests will no longer be sent to Google.';
+        if (!ok) t.checked = !t.checked;
+      }
     });
     root.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (e.target.id === 'settingsForm') {
-        await saveSettings({ google: $('#sGoogle', root).value, contact: $('#sContact', root).value, color: $('#sColor', root).value }, $('#sMsg', root));
+        await saveSettings({ google: $('#sGoogle', root).value, contact: $('#sContact', root).value, color: $('#sColor', root).value, ...(isOwner && $('#sAuto', root) ? { autoGoogle: $('#sAuto', root).checked } : {}) }, $('#sMsg', root));
       }
       if (e.target.id === 'pwForm') {
         const msg = $('#pMsg', root);
