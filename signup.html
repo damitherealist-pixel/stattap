@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e15">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>Sign up · StatTap</title>
+<meta name="description" content="Create your StatTap business link in a few minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="nav" id="siteNav">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="StatTap home">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L96 50 L50 96 L4 50 Z" fill="none" stroke="#d6b373" stroke-width="3"/><path d="M50 13 L87 50 L50 87 L13 50 Z" fill="none" stroke="#d6b373" stroke-width="1.4"/><text x="50" y="63" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="600" font-size="38" fill="#d6b373">S</text></svg>
+      <span>STAT TAP</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="/#how">How it works</a><a href="/#industries">Industries</a><a href="/#dashboard">Dashboard</a><a href="/#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-line btn-sm" href="/login">Log in</a>
+      <a class="btn btn-gold btn-sm" href="/signup">Get started</a>
+    </div>
+  </div>
+</header>
+<main>
+<section class="view" id="v-signup">
+  <div class="wrap"><div class="app-narrow">
+    <div class="app-head"><div class="eyebrow">Create your business link</div><h1 id="suTitle">Set up StatTap in five steps.</h1></div>
+    <div class="steps-bar" id="suBar"><div>Business</div><div>Industry</div><div>Questions</div><div>Google</div><div>Account</div></div>
+    <form class="panel2" id="suForm" novalidate>
+      <!-- step 1 -->
+      <div class="fields" data-step="0">
+        <label class="f" for="suName">Business name<input class="inp" id="suName" type="text" maxlength="160" placeholder="e.g. Crown Cuts Barbershop" autocomplete="organization"></label>
+        <label class="f" for="suSlug">Your StatTap address <small>This is what your NFC cards open. Letters, numbers and dashes.</small>
+          <div class="slugrow"><span>stattap.net/</span><input id="suSlug" type="text" maxlength="40" placeholder="crown-cuts" autocapitalize="off" spellcheck="false"></div></label>
+        <div class="hint" id="slugHint" aria-live="polite"></div>
+      </div>
+      <!-- step 2 -->
+      <div class="fields" data-step="1" hidden>
+        <div><strong style="font-size:17px">What kind of business is it?</strong><p style="color:var(--muted);font-size:14.5px;margin-top:4px">We'll load the five questions your customers talk about most. You can edit them next.</p></div>
+        <div class="inds" id="suInds" role="group" aria-label="Industry"></div>
+      </div>
+      <!-- step 3 -->
+      <div class="fields" data-step="2" hidden>
+        <div><strong style="font-size:17px">Your five rating questions</strong><p style="color:var(--muted);font-size:14.5px;margin-top:4px">Customers rate each one from 1 to 5 stars. Change the wording or swap one out, like parking or a staff member. These stay fixed after sign-up so your scores line up week to week.</p></div>
+        <div class="fields" id="suQs" style="gap:12px"></div>
+      </div>
+      <!-- step 4 -->
+      <div class="fields" data-step="3" hidden>
+        <label class="f" for="suGoogle">Google review link or Place ID <small>In Google Business Profile, choose "Ask for reviews" and copy the link. You can add it later in Settings.</small><input class="inp" id="suGoogle" type="text" maxlength="600" placeholder="https://g.page/r/.../review"></label>
+        <p style="color:var(--muted);font-size:14px">Every customer is offered your Google page after they submit, whatever their rating. That keeps your business within Google's rules.</p>
+        <label class="f" for="suContact">Contact for unhappy customers <small>Shown to anyone who rates 1 to 3 stars, so they can reach you directly.</small><input class="inp" id="suContact" type="text" maxlength="200" placeholder="Phone number or email"></label>
+        <label class="f" for="suColor">Brand color<input id="suColor" type="color" value="#d6b373" style="width:64px;height:44px;border:1px solid var(--line);border-radius:10px;background:#0e121c;padding:3px"></label>
+      </div>
+      <!-- step 5 -->
+      <div class="fields" data-step="4" hidden>
+        <div><strong style="font-size:17px">Create your login</strong><p style="color:var(--muted);font-size:14.5px;margin-top:4px">You'll use this to open your dashboard at stattap.net/login.</p></div>
+        <label class="f" for="suEmail">Email<input class="inp" id="suEmail" type="email" maxlength="200" autocomplete="email" placeholder="owner@yourbusiness.com"></label>
+        <label class="f" for="suPass">Password <small>At least 8 characters</small><input class="inp" id="suPass" type="password" autocomplete="new-password" minlength="8"></label>
+        <label class="f" for="suPass2">Type it again<input class="inp" id="suPass2" type="password" autocomplete="new-password" minlength="8"></label>
+        <label class="hp" for="suWebsite" aria-hidden="true">Website<input id="suWebsite" type="text" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <!-- done -->
+      <div class="fields" data-step="5" hidden>
+        <div><strong style="font-size:19px" id="doneTitle">Your link is ready.</strong><p style="color:var(--muted);font-size:14.5px;margin-top:4px">Put this link on your NFC cards. Anyone who taps opens your review page.</p></div>
+        <div class="linkbox"><code id="doneLink"></code><button class="btn btn-line btn-sm" type="button" id="doneCopy">Copy link</button></div>
+        <div><strong>Write it to an NFC card</strong>
+          <ol class="howto" style="margin-top:10px">
+            <li>Install <b>NFC Tools</b> (free on iPhone and Android).</li>
+            <li>Tap <b>Write</b>, then <b>Add a record</b>, then <b>URL</b>, and paste your link.</li>
+            <li>Tap <b>Write</b> and hold your phone on the card until it confirms.</li>
+            <li>Optional: use <b>Other → Lock tag</b> so nobody can rewrite it. Locking is permanent.</li>
+          </ol></div>
+        <div class="hero-ctas" style="margin-top:6px"><a class="btn btn-gold" href="/login">Open my dashboard</a><a class="btn btn-line" id="doneReview" href="/" target="_blank" rel="noopener">Try my review page</a></div>
+      </div>
+      <div class="err" id="suErr" role="alert" style="margin-top:14px"></div>
+      <div class="navrow" id="suNav"><button class="btn btn-line" type="button" id="suBack">Back</button><button class="btn btn-gold" type="submit" id="suNext">Continue</button></div>
+      <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:18px" id="suHave">Already have an account? <a href="/login" style="color:var(--brass)">Log in</a></p>
+    </form>
+  </div></div>
+</section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('on'),2600)}
+async function copyText(text){try{await navigator.clipboard.writeText(text);toast('Copied');return}catch(e){}
+  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();toast(ok?'Copied':'Press and hold the link to copy it')}
+const slugify=s=>s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/['’]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40).replace(/-+$/,'');
+const SLUG_RE=/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
+const su={step:0,name:'',slug:'',slugTouched:false,slugOk:null,ind:-1,qs:null,busy:false};
+let INDS=[];
+const TITLES=['Set up StatTap in five steps.','What kind of business is it?','Pick your five questions.','Connect Google and your contact.','Create your login.','You\'re all set.'];
+
+async function api(path,opts){
+  let r;try{r=await fetch('/api/'+path,Object.assign({headers:{'content-type':'application/json'}},opts||{}))}catch(e){throw new Error('Could not reach StatTap. Check your connection and try again.')}
+  const d=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(d.error||'Something went wrong. Try again.');e.data=d;throw e}return d}
+api('industries').then(d=>{INDS=d.industries||[];renderInds()}).catch(()=>{$('suErr').textContent='Could not load the business types. Refresh the page to try again.'});
+
+function renderInds(){$('suInds').innerHTML=INDS.map((d,i)=>`<button class="ind" type="button" data-i="${i}" aria-pressed="${su.ind===i}">${esc(d.name)}</button>`).join('')}
+function renderQs(){$('suQs').innerHTML=su.qs.map((q,i)=>`<div class="qedit"><b>${i+1}</b><input class="inp" id="suQ${i}t" data-i="${i}" data-k="label" value="${esc(q.label)}" aria-label="Question ${i+1}" maxlength="40"><input class="inp" id="suQ${i}h" data-i="${i}" data-k="hint" value="${esc(q.hint)}" aria-label="Question ${i+1} hint" maxlength="70" placeholder="Short hint (optional)"></div>`).join('')}
+function showStep(){
+  document.querySelectorAll('#suForm [data-step]').forEach(el=>{el.hidden=+el.dataset.step!==su.step});
+  [...$('suBar').children].forEach((el,i)=>{el.className=i<su.step?'done':i===su.step?'cur':''});
+  $('suBar').hidden=su.step===5;$('suHave').hidden=su.step===5;
+  $('suTitle').textContent=TITLES[su.step];
+  $('suBack').style.visibility=su.step===0?'hidden':'visible';
+  $('suNav').hidden=su.step===5;
+  $('suNext').textContent=su.busy?'Creating…':su.step===4?'Create my account':'Continue';
+  $('suNext').disabled=su.busy;
+}
+/* address availability */
+let slugTimer,slugSeq=0;
+function slugHint(){
+  const h=$('slugHint'),s=su.slug;su.slugOk=null;
+  if(!s){h.className='hint';h.textContent='';return}
+  if(!SLUG_RE.test(s)||s.includes('--')){h.className='hint bad';h.textContent='Use 3 to 40 lowercase letters, numbers or single dashes.';su.slugOk=false;return}
+  h.className='hint';h.textContent='Checking…';clearTimeout(slugTimer);const seq=++slugSeq;
+  slugTimer=setTimeout(async()=>{try{const d=await api('slug?s='+encodeURIComponent(s));if(seq!==slugSeq)return;su.slugOk=!!d.ok;
+    h.className='hint '+(d.ok?'ok':'bad');h.textContent=d.ok?'stattap.net/'+s+' is available.':(d.reason==='format'?'That word is reserved. Try another address.':'That address is taken. Try adding your city, like '+s+'-bristol.')}
+    catch(e){if(seq===slugSeq){h.className='hint';h.textContent=''}}},350);
+}
+$('suName').addEventListener('input',e=>{su.name=e.target.value;if(!su.slugTouched){su.slug=slugify(su.name);$('suSlug').value=su.slug}slugHint()});
+$('suSlug').addEventListener('input',e=>{su.slugTouched=true;su.slug=e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'');e.target.value=su.slug;slugHint()});
+$('suInds').addEventListener('click',e=>{const b=e.target.closest('.ind');if(!b)return;const i=+b.dataset.i;if(su.ind!==i){su.ind=i;su.qs=INDS[i].questions.map(q=>({label:q.label,hint:q.hint}))}renderInds();$('suErr').textContent=''});
+$('suQs').addEventListener('input',e=>{const t=e.target;if(t.dataset.i!=null)su.qs[+t.dataset.i][t.dataset.k]=t.value});
+$('suBack').addEventListener('click',()=>{if(su.step>0){su.step--;showStep();$('suErr').textContent=''}});
+$('suForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const err=m=>{$('suErr').textContent=m};err('');
+  if(su.step===0){
+    if(!su.name.trim())return err('Enter your business name.');
+    if(!su.slug)return err('Choose your StatTap address.');
+    if(su.slugOk===null){try{const d=await api('slug?s='+encodeURIComponent(su.slug));su.slugOk=!!d.ok}catch(x){return err(x.message)}}
+    if(!su.slugOk)return err('Pick an address that shows as available.');
+  }
+  if(su.step===1&&su.ind<0)return err('Choose the type of business that fits best.');
+  if(su.step===2){const bad=su.qs.findIndex(q=>!q.label.trim());if(bad>=0)return err('Question '+(bad+1)+' needs a name.')}
+  if(su.step===4){
+    const email=$('suEmail').value.trim(),p1=$('suPass').value,p2=$('suPass2').value;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return err('Enter a valid email.');
+    if(p1.trim().length<8)return err('Your password needs at least 8 characters.');
+    if(p1!==p2)return err("The two passwords don't match.");
+    su.busy=true;showStep();
+    try{
+      const d=await api('signup',{method:'POST',body:JSON.stringify({name:su.name.trim(),slug:su.slug,industry:INDS[su.ind].id,questions:su.qs,
+        google:$('suGoogle').value.trim(),contact:$('suContact').value.trim(),color:$('suColor').value,email,password:p1,website:$('suWebsite').value})});
+      try{localStorage.setItem('rd-client-token',d.token);localStorage.removeItem('rd-must-change')}catch(x){}
+      const link=location.origin+'/'+d.client.slug;
+      $('doneTitle').textContent=d.client.name+' is ready.';$('doneLink').textContent=link;$('doneReview').href='/'+d.client.slug;
+      su.busy=false;su.step=5;showStep();window.scrollTo(0,0);
+    }catch(x){
+      su.busy=false;const f=x.data&&x.data.field;
+      if(f==='name'||f==='slug'){su.step=0;if(f==='slug'){su.slugOk=false;slugHint()}}else if(f==='industry')su.step=1;else if(f==='questions')su.step=2;
+      showStep();err(x.message)}
+    return;
+  }
+  if(su.step===1)renderQs();
+  su.step++;showStep();
+  const first=document.querySelector(`#suForm [data-step="${su.step}"] input`);if(first&&su.step!==3)first.focus();
+});
+$('doneCopy').addEventListener('click',()=>copyText($('doneLink').textContent));
+showStep();
+})();
+</script>
+
+</body>
+</html>

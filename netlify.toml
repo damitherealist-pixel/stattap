@@ -1,0 +1,24 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Clean page addresses
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/signup"
+  to = "/signup.html"
+  status = 200
+
+# Business review pages: stattap.net/<business-address> shows the review page.
+# Real files (index, login, signup, admin.html, review.html, images) are served first.
+[[redirects]]
+  from = "/:slug"
+  to = "/review.html"
+  status = 200

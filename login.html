@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e1116">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="favicon.png">
+<title>Log in · StatTap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <a href="/" aria-label="StatTap home"><img src="stattap-mark.png" alt="" class="brand-mark" width="44" height="45"></a>
+      <div><a href="/"><img src="stattap-word.png" alt="Stat Tap" class="brand-word" width="134" height="17"></a><small>Your guest reviews and weekly report</small></div>
+    </div>
+    <button class="btn" id="signOut" hidden>Sign out</button>
+  </header>
+
+  <section id="authView" class="panel auth" hidden>
+    <form id="authForm" class="form">
+      <h2>Sign in to your business</h2>
+      <label for="aEmail">Email<input id="aEmail" type="email" autocomplete="email" required></label>
+      <label for="aPass">Password<input id="aPass" type="password" autocomplete="current-password" required></label>
+      <label class="row" style="font-weight:500;gap:8px" for="showPw"><input type="checkbox" id="showPw"> Show password</label>
+      <button class="btn primary" type="submit" id="authBtn">Sign in</button>
+      <div class="error" id="authMsg" role="alert"></div>
+      <p class="note" id="forgot">Forgot your password? Contact StatTap support and we'll send you a temporary one.</p>
+      <p class="note">New to StatTap? <a href="/signup">Create your business link</a></p>
+    </form>
+  </section>
+
+  <section id="pwView" class="panel auth" hidden>
+    <form id="newPwForm" class="form" novalidate>
+      <h2>Choose your own password</h2>
+      <p class="note">You signed in with a temporary password. Pick a new one to open your dashboard.</p>
+      <label for="nCur" id="nCurWrap">Temporary password<input id="nCur" type="password" autocomplete="current-password" required></label>
+      <label for="nNew">New password <small>At least 8 characters</small><input id="nNew" type="password" autocomplete="new-password" required minlength="8"></label>
+      <label for="nNew2">Type it again<input id="nNew2" type="password" autocomplete="new-password" required minlength="8"></label>
+      <button class="btn primary" type="submit" id="nBtn">Save and continue</button>
+      <div class="error" id="nMsg" role="alert"></div>
+      <button class="btn ghost" type="button" id="nOut">Sign out</button>
+    </form>
+  </section>
+
+  <main id="dash"></main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="app.js"></script>
+<script>
+const { $ } = RD;
+const KEY = 'rd-client-token', MC = 'rd-must-change';
+let dash = null, mustChange = false, tempPw = '';
+try { RD.token = localStorage.getItem(KEY); mustChange = localStorage.getItem(MC) === '1'; } catch (e) {}
+const setMust = (v) => { mustChange = v; try { v ? localStorage.setItem(MC, '1') : localStorage.removeItem(MC); } catch (e) {} };
+
+function signOut() {
+  RD.token = null; tempPw = ''; setMust(false); try { localStorage.removeItem(KEY); } catch (e) {}
+  if (dash) dash.destroy(); dash = null; $('#dash').innerHTML = ''; show();
+}
+RD.onUnauthorized = signOut;
+RD.onMustChange = () => { setMust(true); if (dash) dash.destroy(); dash = null; $('#dash').innerHTML = ''; show(); };
+
+fetch('/api/support').then((r) => r.json()).then((d) => {
+  if (d && d.contact) { const p = $('#forgot'); p.textContent = 'Forgot your password? Contact StatTap support at '; const b = document.createElement('b'); b.textContent = d.contact; p.append(b, ' and we\'ll send you a temporary one.'); }
+}).catch(() => {});
+
+function show() {
+  const inApp = !!RD.token;
+  $('#authView').hidden = inApp; $('#signOut').hidden = !inApp || mustChange;
+  $('#pwView').hidden = !(inApp && mustChange);
+  if (inApp && mustChange) { $('#nCurWrap').hidden = !!tempPw; return; }
+  if (inApp && !dash) {
+    dash = RD.Dashboard($('#dash'), { onToken: (t) => { RD.token = t; try { localStorage.setItem(KEY, t); } catch (e) {} } });
+  }
+}
+$('#showPw').addEventListener('change', (e) => { $('#aPass').type = e.target.checked ? 'text' : 'password'; });
+$('#authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#authBtn').disabled = true; $('#authMsg').textContent = '';
+  try {
+    const pw = $('#aPass').value;
+    const d = await RD.api('login', { method: 'POST', body: JSON.stringify({ role: 'client', email: $('#aEmail').value, password: pw }) });
+    RD.token = d.token; try { localStorage.setItem(KEY, d.token); } catch (err) {}
+    setMust(!!d.mustChange); tempPw = d.mustChange ? pw : '';
+    $('#aPass').value = ''; show();
+  } catch (err) { $('#authMsg').textContent = err.message; }
+  finally { $('#authBtn').disabled = false; }
+});
+$('#signOut').addEventListener('click', signOut);
+$('#nOut').addEventListener('click', signOut);
+$('#newPwForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const n1 = $('#nNew').value.trim(), n2 = $('#nNew2').value.trim();
+  $('#nMsg').textContent = '';
+  if (n1.length < 8) { $('#nMsg').textContent = 'Use at least 8 characters.'; return; }
+  if (n1 !== n2) { $('#nMsg').textContent = "The two passwords don't match."; return; }
+  $('#nBtn').disabled = true;
+  try {
+    const d = await RD.api('me/password', { method: 'POST', body: JSON.stringify({ current: tempPw || $('#nCur').value, password: n1 }) });
+    RD.token = d.token; try { localStorage.setItem(KEY, d.token); } catch (err) {}
+    tempPw = ''; setMust(false); e.target.reset(); show();
+  } catch (err) { $('#nMsg').textContent = err.message; if (/current password/i.test(err.message)) { tempPw = ''; $('#nCurWrap').hidden = false; } }
+  finally { $('#nBtn').disabled = false; }
+});
+show();
+</script>
+</body>
+</html>

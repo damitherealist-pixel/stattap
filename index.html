@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e15">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>StatTap · Tap-to-review for local business</title>
+<meta name="description" content="StatTap turns a tap of the phone into a review. Customers rate their visit in seconds, post to Google in one tap, and you see every rating in a live dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="nav" id="siteNav">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="StatTap home">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L96 50 L50 96 L4 50 Z" fill="none" stroke="#d6b373" stroke-width="3"/><path d="M50 13 L87 50 L50 87 L13 50 Z" fill="none" stroke="#d6b373" stroke-width="1.4"/><text x="50" y="63" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="600" font-size="38" fill="#d6b373">S</text></svg>
+      <span>STAT TAP</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#how">How it works</a><a href="#industries">Industries</a><a href="#dashboard">Dashboard</a><a href="#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-line btn-sm" href="/login">Log in</a>
+      <a class="btn btn-gold btn-sm" href="/signup">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main id="v-home">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Tap-to-review for local business</div>
+        <h1>Hear from every customer <em>before</em> they walk out the door.</h1>
+        <p class="lead">Customers tap a StatTap card with their phone, rate their visit in about 20 seconds, and can post to Google with one more tap. You see every rating, the moment it lands, in your own dashboard.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-gold" href="/signup">Create your business link
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-line" href="#how">See how it works</a>
+        </div>
+        <div class="hero-notes">
+          <span><i></i>No app to download</span>
+          <span><i></i>Works on iPhone and Android</span>
+          <span><i></i>Questions made for your industry</span>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="cardCanvas" aria-label="A black StatTap NFC card floating, with gold rings pulsing out from it" role="img"></canvas>
+        <div class="fallback-card" aria-hidden="true"></div>
+        <div class="chip c1"><span class="s">★★★★★</span><b>New review</b><small>Sakura Asian Bristol</small></div>
+        <div class="chip c2"><b>Meal timing</b><span class="up">▲ +0.7</span><small>this week</small></div>
+        <div class="chip c3"><b>4.2 → 5.0</b><small>overall rating</small></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="facts">
+    <div class="wrap">
+      <div class="fact"><b>~20s</b><span>to leave a full review from the table, chair or front desk</span></div>
+      <div class="fact"><b>5</b><span>rating questions picked for your type of business</span></div>
+      <div class="fact"><b>1</b><span>link of your own, for cards, receipts and texts</span></div>
+    </div>
+  </div>
+
+  <section class="band" id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">How it works</div>
+        <h2>Three moments, all while the customer is still there.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">STEP 1</div>
+          <h3>Tap</h3>
+          <p>A StatTap card sits on the table, the counter or the front desk. The customer holds their phone to it and your review page opens. No camera, no code to line up.</p>
+          <div class="demo"><div class="waves">
+            <div class="tag"><svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6 L94 50 L50 94 L6 50 Z" fill="none" stroke="#d6b373" stroke-width="4"/><text x="50" y="64" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="600" font-size="40" fill="#d6b373">S</text></svg></div>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#d6b373" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 8.5a5 5 0 0 1 0 7"/><path d="M9.5 6a9 9 0 0 1 0 12"/><path d="M13 3.5a13 13 0 0 1 0 17"/></svg>
+          </div></div>
+        </div>
+        <div class="step">
+          <div class="n">STEP 2</div>
+          <h3>Rate</h3>
+          <p>One overall star rating, five quick taps on the parts of the visit that matter for your business, and a few words. Then one button copies the review and opens your Google page.</p>
+          <div class="demo"><div class="mini-stars" id="stepStars"></div></div>
+        </div>
+        <div class="step">
+          <div class="n">STEP 3</div>
+          <h3>Grow</h3>
+          <p>Every rating lands in your dashboard right away. A weekly report shows what improved, what slipped, and who to follow up with.</p>
+          <div class="demo"><svg class="spark" viewBox="0 0 180 60" aria-hidden="true">
+            <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8e9cff" stop-opacity=".35"/><stop offset="1" stop-color="#8e9cff" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 46 L30 42 L60 44 L90 34 L120 30 L150 22 L180 10 L180 60 L0 60 Z" fill="url(#sg)"/>
+            <path d="M0 46 L30 42 L60 44 L90 34 L120 30 L150 22 L180 10" fill="none" stroke="#8e9cff" stroke-width="2.4" stroke-linejoin="round"/>
+            <circle cx="176" cy="11" r="4.5" fill="#8e9cff"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="industries" style="padding-top:24px">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Who we serve</div>
+        <h2>The right five questions for every kind of business.</h2>
+        <p class="lead">A barbershop customer cares about the cut. An auto shop customer cares about the price matching the quote. Pick your industry and StatTap loads the questions your customers actually talk about.</p>
+      </div>
+      <div class="picker">
+        <div>
+          <div class="inds" id="inds" role="group" aria-label="Choose an industry"></div>
+          <p class="picker-note"><strong>You can change any question.</strong> Need to ask about parking or a specific staff member? Swap it in when you set up your link. Every business gets its own address, like the one shown on the phone.</p>
+        </div>
+        <div class="phone" aria-live="polite">
+          <div class="phone-in">
+            <div class="url"><svg width="12" height="14" viewBox="0 0 14 16" aria-hidden="true"><rect x="1" y="7" width="12" height="8.5" rx="2" fill="#9097a9"/><path d="M3.8 7V4.8a3.2 3.2 0 0 1 6.4 0V7" fill="none" stroke="#9097a9" stroke-width="1.8"/></svg><span>stattap.net/<b id="slug">sakura</b></span></div>
+            <div class="form">
+              <div class="biz"><div class="av" id="av">S</div><div><h4 id="bizName">Sakura Asian Bristol</h4><small id="bizSub">Thanks for visiting. How did we do?</small></div></div>
+              <div id="qs"></div>
+            </div>
+            <div class="ex">EXAMPLE BUSINESS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band dash-band" id="dashboard">
+    <div class="wrap dash-grid">
+      <div>
+        <div class="sec-head">
+          <div class="eyebrow">Your dashboard</div>
+          <h2>See what Google never shows you.</h2>
+          <p class="lead">A star rating on Google tells you how people feel. StatTap tells you why, broken down by each part of the visit, week over week.</p>
+        </div>
+        <div class="feats">
+          <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="#d6b373" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><div><strong>Ratings for each part of the visit</strong><span>Know whether it was the service, the wait or the result that moved your score.</span></div></div>
+          <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="#d6b373" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><div><strong>A weekly report you can print</strong><span>What improved, what to watch, and your strongest and weakest areas.</span></div></div>
+          <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="#d6b373" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><div><strong>A direct line for unhappy customers</strong><span>Anyone who rates 1 to 3 stars sees your phone or email, so you hear about problems first.</span></div></div>
+          <div class="feat"><svg viewBox="0 0 24 24" fill="none" stroke="#d6b373" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><div><strong>More Google reviews</strong><span>Every customer gets a one-tap path to your Google page with their review already copied.</span></div></div>
+        </div>
+      </div>
+      <div class="browser" aria-label="Example StatTap dashboard" role="img">
+        <div class="bbar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span>stattap.net/dashboard · Sakura Asian Bristol</span></div>
+        <div class="bbody">
+          <div class="growth"><small>GROWTH · OCT 19 – OCT 25</small><div>Rating up from 4.2 to 5.0</div><p>Meal timing improved the most (4.3 → 5.0).</p></div>
+          <div class="rows">
+            <div class="row"><span>Cleanliness</span><span class="d">▲ +0.5</span><div class="tr"><div style="width:90%"></div></div><b>4.5</b></div>
+            <div class="row"><span>Atmosphere</span><span class="d">▲ +0.2</span><div class="tr"><div style="width:100%"></div></div><b>5.0</b></div>
+            <div class="row"><span>Waiter service</span><span class="d">▲ +0.2</span><div class="tr"><div style="width:90%"></div></div><b>4.5</b></div>
+            <div class="row"><span>Meal presentation</span><span class="d z">±0.0</span><div class="tr"><div style="width:90%"></div></div><b>4.5</b></div>
+            <div class="row"><span>Meal timing</span><span class="d">▲ +0.7</span><div class="tr"><div style="width:100%"></div></div><b>5.0</b></div>
+          </div>
+          <div class="rev"><div class="t"><span class="s">★★★★★</span><b>Ali F.</b><span style="color:var(--muted)">Oct 22</span><span class="new">NEW</span></div><p>I enjoyed the food. The live concert was phenomenal.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">Why a tap</div>
+        <h2>Ask while the visit is still fresh.</h2>
+      </div>
+      <div class="compare">
+        <div class="cmp"><small>Mailed survey</small><strong>Arrives weeks later</strong><p>By then the visit is a blur, and the envelope goes in the recycling.</p></div>
+        <div class="cmp"><small>Email survey</small><strong>Lost in the inbox</strong><p>Easy to skip, easy to miss, and it asks the customer to remember.</p></div>
+        <div class="cmp"><small>QR code</small><strong>Open camera, aim, wait</strong><p>It works, but it takes enough effort that many people don't bother.</p></div>
+        <div class="cmp us"><small>StatTap</small><strong>One tap, right there</strong><p>The customer is still in your space, the details are fresh, and it takes seconds.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band dash-band" id="about">
+    <div class="wrap about">
+      <div>
+        <div class="eyebrow" style="margin-bottom:22px">About StatTap</div>
+        <h2>Built for the places that <em>deserve</em> to be noticed.</h2>
+      </div>
+      <div class="body">
+        <p>Big chains have survey teams and research budgets. The family restaurant, the barber down the street and the two-room clinic don't, and they are often the ones doing the best work.</p>
+        <p><strong>StatTap gives every local business the same picture</strong> of what customers think, in real time, for less effort than printing a menu. Happy customers turn into public reviews. Unhappy ones reach the owner directly, so problems get fixed instead of posted.</p>
+        <p>We work with independent and family-owned businesses, neighborhood main streets, and first-time owners building a reputation from zero.</p>
+        <div class="serve">
+          <span>Restaurants &amp; cafés</span><span>Salons &amp; barbershops</span><span>Auto repair</span><span>Clinics &amp; urgent care</span><span>Dental offices</span><span>Gyms &amp; studios</span><span>Home services</span><span>Hotels</span><span>Retail shops</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <div class="eyebrow">Get started</div>
+      <h2>Your business, one tap away.</h2>
+      <p class="lead">Pick your industry, add your Google review link, and get a StatTap link that's ready for your cards.</p>
+      <div class="slug">stattap.net/<b>your-business</b></div>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="/signup">Create your business link</a>
+        <a class="btn btn-line" href="/login">Log in to your dashboard</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="homeFoot">
+  <div class="wrap">
+    <span>© 2026 StatTap · stattap.net</span>
+    <nav aria-label="Footer"><a href="#how">How it works</a><a href="#industries">Industries</a><a href="/login">Log in</a><a href="/signup">Get started</a></nav>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---------- star helper ---------- */
+const STAR='M12 2.6l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.4l-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8z';
+const starSvg=c=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${STAR}" fill="${c}"/></svg>`;
+document.getElementById('stepStars').innerHTML=[1,1,1,1,1].map(()=>starSvg('#f5b83d')).join('');
+
+/* ---------- industry picker ---------- */
+const IND=[
+ {k:'Restaurants',slug:'sakura',name:'Sakura Asian Bristol',c:'#8ac926',sub:'Thanks for visiting. How did we do?',r:[5,5,4,5,4],
+  q:[['Cleanliness','Tables, floors and restrooms'],['Atmosphere','Music, lighting and comfort'],['Waiter service','Friendly and attentive staff'],['Meal presentation','How your food looked'],['Meal timing','How long your food took']]},
+ {k:'Salons & barbers',slug:'crown-cuts',name:'Crown Cuts Barbershop',c:'#c77dff',sub:'How was your cut today?',r:[5,5,4,5,5],
+  q:[['Your result','Did you get the look you asked for'],['Your stylist','Who did your service'],['Wait time','Seen on time for your appointment'],['Consultation','Listened and explained clearly'],['Cleanliness','Stations, tools and chairs']]},
+ {k:'Auto repair',slug:'joes-auto',name:"Joe's Auto Service",c:'#4cc9f0',sub:'Thanks for trusting us with your car.',r:[5,4,5,5,4],
+  q:[['Quality of the work','Was the problem actually fixed'],['Honest pricing','Final bill matched the quote'],['Turnaround time','Ready when we said it would be'],['Communication','Explained the issue in plain terms'],['Customer service','Friendly staff and waiting area']]},
+ {k:'Clinics & urgent care',slug:'eastside-urgent-care',name:'Eastside Urgent Care',c:'#2ec4b6',sub:'Thank you for choosing us today.',r:[4,5,5,4,4],
+  q:[['Wait time','From check-in to being seen'],['Your provider','Listened and took their time'],['Front desk','Check-in and friendliness'],['Explanation','Next steps were clear'],['Billing clarity','Costs explained up front']]},
+ {k:'Dental',slug:'bright-smile-dental',name:'Bright Smile Dental',c:'#6aa6ff',sub:'How was your visit?',r:[5,5,4,5,4],
+  q:[['Comfort','How comfortable you felt'],['Your dentist or hygienist','Gentle, clear and unhurried'],['Wait time','Seen close to your appointment'],['Front desk','Scheduling and check-in'],['Billing & insurance','No surprise charges']]},
+ {k:'Gyms & studios',slug:'iron-district',name:'Iron District Fitness',c:'#ff7b54',sub:'How was your workout?',r:[4,5,5,4,5],
+  q:[['Cleanliness','Equipment, mats and locker rooms'],['Coaches & trainers','Helpful and motivating'],['Classes','Schedule and quality'],['Crowding','Space and equipment available'],['Front desk','Membership and check-in']]},
+ {k:'Home services',slug:'reliable-plumbing',name:'Reliable Plumbing Co.',c:'#ffd166',sub:'How did our team do at your home?',r:[5,5,4,5,5],
+  q:[['Quality of the work','Done right the first time'],['On time','Arrived in the window promised'],['Fair pricing','Price matched the estimate'],['Communication','Kept you in the loop'],['Clean-up','Left your home tidy']]},
+ {k:'Hotels',slug:'harbor-inn',name:'The Harbor Inn',c:'#e5989b',sub:'How was your stay?',r:[5,4,5,5,4],
+  q:[['Room cleanliness','Room and bathroom'],['Check-in','Quick and welcoming'],['Comfort & sleep','Bed, quiet and temperature'],['Staff','Helpful during your stay'],['Value','Worth what you paid']]},
+ {k:'Retail',slug:'corner-goods',name:'Corner Goods Market',c:'#90be6d',sub:'Thanks for shopping with us.',r:[5,4,5,5,4],
+  q:[['Selection','Found what you came for'],['Staff help','Easy to get help'],['Checkout','Quick line and payment'],['Store tidiness','Clean and easy to shop'],['Value','Fair prices']]}
+];
+const inds=document.getElementById('inds'),qs=document.getElementById('qs');
+inds.innerHTML=IND.map((d,i)=>`<button class="ind" type="button" id="ind-${i}" aria-pressed="${i===0}">${d.k}</button>`).join('');
+function show(i,animate){
+  const d=IND[i];
+  inds.querySelectorAll('.ind').forEach((b,j)=>b.setAttribute('aria-pressed',String(j===i)));
+  document.getElementById('slug').textContent=d.slug;
+  document.getElementById('bizName').textContent=d.name;
+  document.getElementById('bizSub').textContent=d.sub;
+  const av=document.getElementById('av');av.textContent=d.name[0];av.style.background=d.c;
+  qs.innerHTML=d.q.map((q,j)=>`<div class="q${animate?' swap':''}" style="animation-delay:${j*55}ms"><div><strong>${q[0]}</strong><span>${q[1]}</span></div><div class="st">${[0,1,2,3,4].map(s=>starSvg(s<d.r[j]?'#f5b83d':'#323a4c')).join('')}</div></div>`).join('');
+}
+inds.addEventListener('click',e=>{const b=e.target.closest('.ind');if(b)show(+b.id.split('-')[1],true)});
+show(0,false);
+
+/* ---------- 3D tap card ---------- */
+(function(){
+  const stage=document.getElementById('stage'),canvas=document.getElementById('cardCanvas');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!window.THREE){stage.classList.add('no3d');return}
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true})}catch(e){stage.classList.add('no3d');return}
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(32,1,0.1,100);camera.position.set(0,0,9.2);
+
+  // lights
+  scene.add(new THREE.AmbientLight(0xffffff,.32));
+  const key=new THREE.DirectionalLight(0xfff1dc,1.1);key.position.set(-3,4,6);scene.add(key);
+  const rim=new THREE.PointLight(0xd6b373,2.2,20);rim.position.set(4,-1,2.5);scene.add(rim);
+  const sweep=new THREE.DirectionalLight(0xffffff,.0);scene.add(sweep);
+
+  // card body
+  const W=3.4,H=2.14,R=.2;
+  const shape=new THREE.Shape();
+  shape.moveTo(-W/2+R,-H/2);shape.lineTo(W/2-R,-H/2);shape.quadraticCurveTo(W/2,-H/2,W/2,-H/2+R);
+  shape.lineTo(W/2,H/2-R);shape.quadraticCurveTo(W/2,H/2,W/2-R,H/2);shape.lineTo(-W/2+R,H/2);
+  shape.quadraticCurveTo(-W/2,H/2,-W/2,H/2-R);shape.lineTo(-W/2,-H/2+R);shape.quadraticCurveTo(-W/2,-H/2,-W/2+R,-H/2);
+  const geo=new THREE.ExtrudeGeometry(shape,{depth:.05,bevelEnabled:true,bevelThickness:.02,bevelSize:.02,bevelSegments:4,curveSegments:16});
+  geo.center();
+  const body=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x0f1014,metalness:.55,roughness:.38}));
+  const card=new THREE.Group();card.add(body);scene.add(card);
+
+  // face texture
+  const fc=document.createElement('canvas');fc.width=1360;fc.height=856;
+  const ctx=fc.getContext('2d');
+  function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+  function spaced(txt,x,y,sp){for(const ch of txt){ctx.fillText(ch,x,y);x+=ctx.measureText(ch).width+sp}}
+  function gold(y0,y1){const g=ctx.createLinearGradient(0,y0,0,y1);g.addColorStop(0,'#f0d9a6');g.addColorStop(.5,'#d6b373');g.addColorStop(1,'#a8854a');return g}
+  function drawFace(){
+    ctx.clearRect(0,0,fc.width,fc.height);
+    rr(0,0,fc.width,fc.height,80);ctx.save();ctx.clip();
+    const bg=ctx.createLinearGradient(0,0,fc.width,fc.height);bg.addColorStop(0,'#1d1e24');bg.addColorStop(.55,'#0a0a0d');bg.addColorStop(1,'#17181d');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,fc.width,fc.height);
+    // faint brushed lines
+    ctx.globalAlpha=.035;ctx.strokeStyle='#fff';for(let y=0;y<fc.height;y+=6){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(fc.width,y+(y%18?2:-2));ctx.stroke()}ctx.globalAlpha=1;
+    // diamond mark
+    const cx=170,cy=180,s=78;ctx.strokeStyle=gold(cy-s,cy+s);
+    ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(cx,cy-s);ctx.lineTo(cx+s,cy);ctx.lineTo(cx,cy+s);ctx.lineTo(cx-s,cy);ctx.closePath();ctx.stroke();
+    ctx.lineWidth=2.5;const s2=s*.8;ctx.beginPath();ctx.moveTo(cx,cy-s2);ctx.lineTo(cx+s2,cy);ctx.lineTo(cx,cy+s2);ctx.lineTo(cx-s2,cy);ctx.closePath();ctx.stroke();
+    ctx.fillStyle=gold(cy-40,cy+40);ctx.font='600 66px Cinzel, Georgia, serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('S',cx,cy+4);
+    ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    ctx.font='600 64px Cinzel, Georgia, serif';ctx.fillStyle=gold(130,200);spaced('STAT TAP',290,200,22);
+    ctx.font='500 30px Manrope, system-ui, sans-serif';ctx.fillStyle='#8f7d5a';spaced('Guest reviews, one tap',292,252,1);
+    // NFC waves
+    ctx.strokeStyle='#c9a96e';ctx.lineWidth=9;ctx.lineCap='round';
+    [[60,.9],[110,.8],[160,.7]].forEach(([r,a])=>{ctx.globalAlpha=a;ctx.beginPath();ctx.arc(1080,640,r,-0.75,0.75);ctx.stroke()});ctx.globalAlpha=1;
+    ctx.font='600 30px "JetBrains Mono", Menlo, monospace';ctx.fillStyle='#8f7a55';spaced('TAP YOUR PHONE HERE',110,730,6);
+    // edge sheen
+    const sh=ctx.createLinearGradient(0,0,fc.width,0);sh.addColorStop(0,'rgba(255,255,255,.05)');sh.addColorStop(.5,'rgba(255,255,255,0)');sh.addColorStop(1,'rgba(255,255,255,.03)');ctx.fillStyle=sh;ctx.fillRect(0,0,fc.width,fc.height);
+    ctx.restore();
+    tex.needsUpdate=true;
+  }
+  const tex=new THREE.CanvasTexture(fc);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(W+.04,H+.04),new THREE.MeshStandardMaterial({map:tex,transparent:true,metalness:.35,roughness:.42}));
+  face.position.z=.046;card.add(face);
+  drawFace();
+  if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('600 64px Cinzel'),document.fonts.load('500 30px Manrope'),document.fonts.load('600 30px "JetBrains Mono"')]).then(drawFace).catch(()=>{})}
+
+  // pulse rings
+  const rings=[];
+  for(let i=0;i<3;i++){
+    const m=new THREE.Mesh(new THREE.RingGeometry(1,1.012,128),new THREE.MeshBasicMaterial({color:0xd6b373,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+    m.position.z=-.3;scene.add(m);rings.push(m);
+  }
+
+  // drifting gold specks
+  const N=46,pos=new Float32Array(N*3),spd=[];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*9;pos[i*3+1]=(Math.random()-.5)*6;pos[i*3+2]=-1.5-Math.random()*2.5;spd.push(.05+Math.random()*.12)}
+  const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const sc=document.createElement('canvas');sc.width=sc.height=64;const sx=sc.getContext('2d');
+  const rg=sx.createRadialGradient(32,32,0,32,32,32);rg.addColorStop(0,'rgba(240,217,166,1)');rg.addColorStop(.35,'rgba(214,179,115,.5)');rg.addColorStop(1,'rgba(214,179,115,0)');sx.fillStyle=rg;sx.fillRect(0,0,64,64);
+  const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:.09,map:new THREE.CanvasTexture(sc),transparent:true,opacity:.55,depthWrite:false}));
+  scene.add(pts);
+
+  // sizing
+  function resize(){
+    const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+    renderer.setSize(w,h,false);camera.aspect=w/h;
+    camera.position.z=w<520?11.2:9.2;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);resize();
+
+  // pointer parallax
+  let mx=0,my=0,tx=0,ty=0;
+  window.addEventListener('pointermove',e=>{tx=(e.clientX/innerWidth-.5)*2;ty=(e.clientY/innerHeight-.5)*2},{passive:true});
+
+  let running=true,start=performance.now();
+  function frame(now){
+    const t=(now-start)/1000;
+    mx+=(tx-mx)*.04;my+=(ty-my)*.04;
+    card.rotation.y=-.38+Math.sin(t*.35)*.22+mx*.22;
+    card.rotation.x=.18+Math.sin(t*.5)*.06+my*.12;
+    card.rotation.z=-.06+Math.sin(t*.27)*.03;
+    card.position.y=Math.sin(t*.8)*.07;
+    // moving highlight
+    sweep.intensity=.55;sweep.position.set(Math.sin(t*.4)*6,2,4);
+    rim.position.x=4+Math.sin(t*.3);
+    // rings: one pulse every 3.6s, three echoes
+    rings.forEach((r,i)=>{const p=((t-i*.32)%3.6)/1.9;const on=p>=0&&p<=1;const e=1-Math.pow(1-Math.min(Math.max(p,0),1),3);
+      const s=1.6+e*2.6;r.scale.set(s,s,1);r.material.opacity=on?(1-p)*.55:0;r.position.y=card.position.y;r.rotation.copy(card.rotation)});
+    const a=pg.attributes.position.array;for(let i=0;i<N;i++){a[i*3+1]+=spd[i]*.006;if(a[i*3+1]>3.2)a[i*3+1]=-3.2}pg.attributes.position.needsUpdate=true;
+    renderer.render(scene,camera);
+    if(running&&!reduce)requestAnimationFrame(frame);
+  }
+  if(reduce){frame(start+4000)}else{
+    new IntersectionObserver(es=>{const vis=es[0].isIntersecting;if(vis&&!running){running=true;requestAnimationFrame(frame)}else if(!vis)running=false},{threshold:0}).observe(stage);
+    requestAnimationFrame(frame);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0e1116">
+<title>Leave a review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="cust">
+  <div class="card" id="card"><div class="empty">Loading…</div></div>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let CATS = [
+  { k: 'clean', label: 'Cleanliness', hint: 'Tables, floors and restrooms' },
+  { k: 'atmos', label: 'Atmosphere', hint: 'Music, lighting and comfort' },
+  { k: 'service', label: 'Waiter service', hint: 'Friendly and attentive staff' },
+  { k: 'present', label: 'Meal presentation', hint: 'How your food looked' },
+  { k: 'timing', label: 'Meal timing', hint: 'How long your food took' },
+];
+const LABELS = ['', 'Poor', 'Fair', 'Okay', 'Good', 'Excellent'];
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
+function googleUrl(g) { g = (g || '').trim(); if (!g) return ''; if (/^https?:\/\//i.test(g)) return g; return 'https://search.google.com/local/writereview?placeid=' + encodeURIComponent(g); }
+function starsText(n) { let s = ''; for (let i = 1; i <= 5; i++) s += i <= n ? '★' : '<span class="off">★</span>'; return `<span class="stars" style="font-size:1.7rem" aria-label="${n} of 5 stars">${s}</span>`; }
+const starButtons = (group, label) => [1, 2, 3, 4, 5].map((i) => `<button type="button" role="radio" aria-checked="false" aria-label="${label}: ${i} star${i > 1 ? 's' : ''}" data-g="${group}" data-v="${i}">${STAR}</button>`).join('');
+
+async function start() {
+  // Works for old links (/review.html?c=<id>) and new addresses (stattap.net/<business>).
+  const qs = new URLSearchParams(location.search);
+  const id = qs.get('c');
+  const path = location.pathname.replace(/^\/+|\/+$/g, '');
+  const slug = (qs.get('s') || (/^[a-z0-9-]{3,40}$/i.test(path) ? path : '')).toLowerCase();
+  if (!id && !slug) { $('#card').innerHTML = '<div class="empty">This review link is missing its business code. Please ask the business for a new link.</div>'; return; }
+  let c = null;
+  try { const r = await fetch('/api/client?' + (id ? 'id=' + encodeURIComponent(id) : 'slug=' + encodeURIComponent(slug))); if (r.ok) c = await r.json(); } catch (e) {}
+  if (!c) { $('#card').innerHTML = '<div class="empty">We couldn\'t find this business. Please check the link, or ask the business for a new one.</div>'; return; }
+  if (Array.isArray(c.questions) && c.questions.length) CATS = c.questions;
+  renderForm(c);
+}
+
+function renderForm(c) {
+  document.title = 'Review ' + c.name;
+  document.documentElement.style.setProperty('--brand', c.color);
+  const vals = { overall: 0 };
+  $('#card').innerHTML = `
+    <div class="bizhead"><div class="mark" style="background:${esc(c.color)}">${esc((c.name.trim()[0] || '★').toUpperCase())}</div>
+      <div><h2>${esc(c.name)}</h2><div class="sub">Thanks for visiting. How did we do?</div></div></div>
+    <form id="rForm" class="form" novalidate>
+      <div class="stack" style="gap:6px">
+        <div class="sect" style="text-align:center">Overall experience</div>
+        <div class="bigstars" role="radiogroup" aria-label="Overall experience">${starButtons('overall', 'Overall')}</div>
+        <div class="rating-label" id="lbl-overall">Tap a star</div>
+      </div>
+      <div>
+        <div class="sect" style="margin-bottom:4px">Rate each part of your visit</div>
+        ${CATS.map((x) => `<div class="catrow"><div class="lbl"><span>${esc(x.label)}${x.hint ? ` <small>· ${esc(x.hint)}</small>` : ''}</span><small id="lbl-${esc(x.k)}"></small></div>
+          <div class="smallstars" role="radiogroup" aria-label="${esc(x.label)}">${starButtons(esc(x.k), esc(x.label))}</div></div>`).join('')}
+      </div>
+      <label for="rText">Your review <small>Required · at least 10 characters</small><textarea id="rText" maxlength="4000" required placeholder="What stood out about your visit?"></textarea></label>
+      <label for="rName">Your name <small>Required</small><input id="rName" type="text" maxlength="120" required autocomplete="name"></label>
+      <button class="btn primary block" type="submit" id="rSubmit" disabled>Submit review</button>
+      <p class="note" id="rHint" style="text-align:center">Rate your visit, write your review and add your name to submit.</p>
+      <div class="error" id="rErr" role="alert"></div>
+    </form>
+    <div class="foot">Your feedback goes directly to ${esc(c.name)}.</div>`;
+
+  const missing = () => [!vals.overall && 'overall experience', ...CATS.filter((x) => !vals[x.k]).map((x) => x.label.toLowerCase()),
+    $('#rText').value.trim().length < 10 && 'your review (at least 10 characters)', !$('#rName').value.trim() && 'your name'].filter(Boolean);
+  function paint(group, v) {
+    document.querySelectorAll(`button[data-g="${group}"]`).forEach((b) => {
+      b.classList.toggle('on', +b.dataset.v <= v);
+      b.setAttribute('aria-checked', String(+b.dataset.v === vals[group]));
+    });
+  }
+  function update() {
+    const m = missing();
+    $('#rSubmit').disabled = m.length > 0;
+    $('#rHint').textContent = m.length ? 'Still needed: ' + m.join(', ') + '.' : 'All set. Tap Submit review.';
+  }
+  $('#rText').addEventListener('input', update); $('#rName').addEventListener('input', update);
+  document.querySelectorAll('button[data-g]').forEach((b) => {
+    const g = b.dataset.g;
+    b.addEventListener('click', () => {
+      vals[g] = +b.dataset.v; paint(g, vals[g]);
+      const l = document.getElementById('lbl-' + g); if (l) l.textContent = LABELS[vals[g]];
+      update();
+    });
+    if (g === 'overall') {
+      b.addEventListener('mouseenter', () => paint(g, +b.dataset.v));
+      b.addEventListener('mouseleave', () => paint(g, vals[g]));
+    }
+  });
+
+  $('#rForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (missing().length) return;
+    const body = $('#rText').value.trim(), name = $('#rName').value.trim();
+    const g = googleUrl(c.google);
+    // Copy now, while the tap still counts as the guest's action (phones block copying later).
+    let copied = false;
+    if (g && body && navigator.clipboard) {
+      navigator.clipboard.writeText(body).then(() => { copied = true; }).catch(() => {});
+    }
+    $('#rSubmit').disabled = true; $('#rSubmit').textContent = 'Sending…'; $('#rErr').textContent = '';
+    let ok = false;
+    try {
+      const cats = {}; CATS.forEach((x) => (cats[x.k] = vals[x.k]));
+      const r = await fetch('/api/review', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ clientId: c.id, stars: vals.overall, cats, body, name }) });
+      ok = r.ok;
+    } catch (err) {}
+    if (!ok) {
+      $('#rErr').textContent = 'Your review didn\'t send. Check your connection and tap Submit again.';
+      $('#rSubmit').disabled = false; $('#rSubmit').textContent = 'Submit review'; return;
+    }
+    renderThanks(c, vals.overall, body, () => copied);
+  });
+}
+
+function renderThanks(c, rating, body, wasCopied) {
+  // Every customer is offered Google, whatever their rating. This can't be switched off.
+  const g = googleUrl(c.google), low = rating <= 3, auto = !!g;
+  $('#card').innerHTML = `
+    <div style="text-align:center">${starsText(rating)}</div>
+    <h2 style="text-align:center">${low ? 'Thank you for telling us.' : 'Thank you!'}</h2>
+    <p class="sub" style="margin:0;text-align:center">${low ? `We're sorry your visit wasn't better. ${esc(c.name)} has received your feedback.` : `${esc(c.name)} has received your review.`}</p>
+    ${low && c.contact ? `<div class="contact"><span class="mono" style="flex:1">${esc(c.contact)}</span><button class="btn" id="copyContact" type="button">Copy</button></div><p class="note" style="text-align:center">Reach out here and the team can make it right.</p>` : ''}
+    ${auto ? `
+      <div class="callout" style="text-align:center">
+        <strong id="gTitle">Opening Google in <span id="count">6</span>…</strong>
+        <span id="gNote">${body ? 'Your review is copied. On Google, tap the text box, paste it, choose your stars and press Post.' : 'On Google, choose your stars and press Post.'}</span>
+      </div>
+      <a class="btn primary block" href="${esc(g)}" id="goNow">${body ? 'Open Google now and paste' : 'Open Google now'}</a>
+      <button class="btn ghost block" type="button" id="stay">Stay on this page</button>` : ''}
+    <div class="foot">You can close this page. · Powered by StatTap</div>`;
+  const cc = $('#copyContact');
+  if (cc) cc.addEventListener('click', () => navigator.clipboard?.writeText(c.contact).then(() => { cc.textContent = 'Copied'; }).catch(() => {}));
+  if (!auto) return;
+  setTimeout(() => { if (body && !wasCopied()) $('#gNote').textContent = 'Tap the button below. Your review will be copied so you can paste it on Google.'; }, 600);
+  $('#goNow').addEventListener('click', () => { if (body && navigator.clipboard) navigator.clipboard.writeText(body).catch(() => {}); });
+  let n = 6, cancelled = false;
+  const t = setInterval(() => {
+    if (cancelled) return;
+    n--; const el = $('#count'); if (el) el.textContent = n;
+    if (n <= 0) { clearInterval(t); location.href = g; }
+  }, 1000);
+  $('#stay').addEventListener('click', () => {
+    cancelled = true; clearInterval(t);
+    $('#gTitle').textContent = 'Want to share on Google later?';
+    $('#stay').hidden = true;
+  });
+}
+start();
+</script>
+</body>
+</html>
