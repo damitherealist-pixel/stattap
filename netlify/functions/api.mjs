@@ -272,6 +272,7 @@ export default async (req) => {
 
   try {
     /* ================= Public ================= */
+    if (route === "save-check" && m === "GET") return json((await s.get("debug/lastfail", { type: "json" })) || {});
     if (route === "industries" && m === "GET") return json({ industries: INDUSTRIES });
 
     if (route === "support" && m === "GET") {
@@ -402,10 +403,15 @@ export default async (req) => {
 
     if (route === "admin/clients" && m === "POST") {
       const b = await readBody();
+      // Records why a save was refused (no passwords or emails), readable at /api/save-check.
+      const fail = async (error, code = 400) => {
+        await s.setJSON("debug/lastfail", { at: new Date().toISOString(), error, slug: String(b.slug || ""), pwLen: String(b.password || "").trim().length, hasEmail: !!String(b.loginEmail || "").trim(), editing: !!b.id }).catch(() => {});
+        return json({ error }, code);
+      };
       const name = clean(b.name, 160);
-      if (!name) return json({ error: "Business name is required." }, 400);
+      if (!name) return await fail("Business name is required.", 400);
       const existing = isId(b.id) ? await s.get(`clients/${b.id}`, { type: "json" }) : null;
-      if (isId(b.id) && !existing) return json({ error: "That business no longer exists." }, 404);
+      if (isId(b.id) && !existing) return await fail("That business no longer exists.", 404);
       const id = existing?.id || randomUUID();
       const c = {
         ...(existing || {}), id, name,
@@ -415,8 +421,8 @@ export default async (req) => {
       };
       if ("autoGoogle" in b) c.autoGoogle = !!b.autoGoogle;
       else if (!existing) c.autoGoogle = false; // new businesses start private
-      if ("facebook" in b) { c.facebook = webLink(b.facebook); if (clean(b.facebook, 600) && !c.facebook) return json({ error: "The Facebook link must start with https://" }, 400); }
-      if ("tripadvisor" in b) { c.tripadvisor = webLink(b.tripadvisor); if (clean(b.tripadvisor, 600) && !c.tripadvisor) return json({ error: "The Tripadvisor link must start with https://" }, 400); }
+      if ("facebook" in b) { c.facebook = webLink(b.facebook); if (clean(b.facebook, 600) && !c.facebook) return await fail("The Facebook link must start with https://", 400); }
+      if ("tripadvisor" in b) { c.tripadvisor = webLink(b.tripadvisor); if (clean(b.tripadvisor, 600) && !c.tripadvisor) return await fail("The Tripadvisor link must start with https://", 400); }
       if ("fbOn" in b) c.fbOn = !!b.fbOn;
       if ("taOn" in b) c.taOn = !!b.taOn;
       // Industry and questions are set when the business is created. Changing them later would
@@ -427,29 +433,29 @@ export default async (req) => {
         const days = Math.min(90, Math.max(1, parseInt(b.trialDays, 10) || TRIAL_DAYS));
         c.plan = "trial"; c.trialEnds = new Date(Date.now() + days * DAY).toISOString();
       }
-      const wantSlug = String(b.slug ?? c.slug ?? "").trim().toLowerCase();
+      const wantSlug = String(b.slug ?? c.slug ?? "").trim().toLowerCase().replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
       if (wantSlug !== (c.slug || "") && wantSlug) {
-        if (!isSlug(wantSlug)) return json({ error: "Use 3 to 40 lowercase letters, numbers or single dashes. Some words are reserved." }, 400);
-        if (!(await slugFree(s, wantSlug, id))) return json({ error: "That address is taken. Try adding your city." }, 400);
+        if (!isSlug(wantSlug)) return await fail("Use 3 to 40 lowercase letters, numbers or single dashes. Some words are reserved.", 400);
+        if (!(await slugFree(s, wantSlug, id))) return await fail("That address is taken. Try adding your city.", 400);
       }
       const email = normEmail(b.loginEmail);
       const pw = String(b.password || "").trim();
       if (email) {
-        if (!isEmail(email)) return json({ error: "Enter a valid email for the client login." }, 400);
+        if (!isEmail(email)) return await fail("Enter a valid email for the client login.", 400);
         const map = await s.get(loginKey(email), { type: "json" });
-        if (map && map.clientId !== id) return json({ error: "That email is already used by another business." }, 409);
-        if (!c.pwHash && !pw) return json({ error: "Set a password for the client login." }, 400);
+        if (map && map.clientId !== id) return await fail("That email is already used by another business.", 409);
+        if (!c.pwHash && !pw) return await fail("Set a password for the client login.", 400);
       } else if (pw) {
-        return json({ error: "Add a login email to go with the password." }, 400);
+        return await fail("Add a login email to go with the password.", 400);
       }
       if (pw) {
-        if (pw.length < 8) return json({ error: "The client password needs at least 8 characters." }, 400);
+        if (pw.length < 8) return await fail("The client password needs at least 8 characters.", 400);
         const h = newHash(pw);
         c.pwSalt = h.salt; c.pwHash = h.hash; c.ver = (c.ver || 1) + 1; c.mustChange = true;
       }
       // Reserve the address only once everything else has passed, so a failed save can't lock it.
       const slugErr = await setSlug(s, c, wantSlug);
-      if (slugErr) return json({ error: slugErr }, 400);
+      if (slugErr) return await fail(slugErr, 400);
       const oldEmail = existing?.loginEmail || "";
       if (oldEmail && oldEmail !== email) {
         await s.delete(loginKey(oldEmail));

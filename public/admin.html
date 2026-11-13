@@ -350,6 +350,12 @@ $('#main').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (e.target.id === 'clientForm') {
     const pw = $('#fPass').value.trim(), email = $('#fEmail').value.trim();
+    // Tidy the address: "Joe's Pizza" -> "joes-pizza".
+    const slugIn = $('#fSlug'); slugIn.value = slugIn.value.trim().toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const stop = (msg, el) => { $('#fMsg').textContent = msg; el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+    if (pw && pw.length < 8) return stop('The password needs at least 8 characters. Tap Generate to make one.', $('#fPass'));
+    if (pw && !email) return stop('Add a login email to go with the password, or clear the password.', $('#fEmail'));
+    if (email && !pw && !(editing && editing.hasLogin)) return stop('Set a password for the client login. Tap Generate to make one.', $('#fPass'));
     $('#fSave').disabled = true; $('#fMsg').textContent = '';
     try {
       const c = await api('admin/clients', { method: 'POST', body: JSON.stringify({
