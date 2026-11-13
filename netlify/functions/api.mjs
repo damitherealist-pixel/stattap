@@ -104,11 +104,14 @@ const isSlug = (s) => typeof s === "string" && /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]
 const slugKey = (s) => `slugs/${s}`;
 
 const store = () => getStore({ name: "review-desk", consistency: "strong" });
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
+const json = (data, status = 200) => {
+  // Log the reason for any rejected request (message only, never passwords) so problems can be traced.
+  if (status >= 400 && data && data.error) console.log("rejected", status, data.error);
+  return new Response(JSON.stringify(data), {
     status,
     headers: { "content-type": "application/json", "cache-control": "no-store" },
   });
+};
 
 const clean = (v, max) => String(v ?? "").trim().slice(0, max);
 const isId = (v) => typeof v === "string" && /^[a-z0-9-]{6,64}$/i.test(v);
