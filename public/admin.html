@@ -23,6 +23,7 @@
     <div class="row" id="nav" hidden>
       <div class="tabs" role="tablist">
         <button role="tab" data-view="list" aria-selected="true">Businesses</button>
+        <button role="tab" data-view="requests" aria-selected="false">Requests<span id="reqBadge" class="pill warn" style="margin-left:6px" hidden></span></button>
         <button role="tab" data-view="account" aria-selected="false">Account</button>
       </div>
       <button class="btn" id="signOut">Sign out</button>
@@ -51,7 +52,7 @@
 const { $, esc, api, fmt, deltaHtml, copy, reviewLink } = RD;
 const KEY = 'rd-owner-token';
 let view = 'list', clients = [], editing = null, confirmDel = null, confirmReset = null, dash = null, setupMode = false, creds = null, listMsg = '';
-let industries = [], support = '';
+let industries = [], support = '', requests = [], reqMsg = '', confirmReqDel = null, prefill = null;
 api('industries').then((d) => { industries = d.industries || []; if (view === 'form') renderForm(); }).catch(() => {});
 try { RD.token = localStorage.getItem(KEY); } catch (e) {}
 const setToken = (t) => { RD.token = t; try { t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY); } catch (e) {} };
@@ -71,6 +72,7 @@ function show() {
   $('#authView').hidden = inApp; $('#nav').hidden = !inApp;
   if (!inApp) { checkSetup(); return; }
   go(view === 'dash' ? 'list' : view);
+  loadRequests();
 }
 $('#showPw').addEventListener('change', (e) => { const t = e.target.checked ? 'text' : 'password'; $('#aPass').type = t; $('#aPass2').type = t; });
 $('#authForm').addEventListener('submit', async (e) => {
@@ -99,7 +101,37 @@ function go(v) {
   if (dash && v !== 'dash') { dash.destroy(); dash = null; }
   if (v === 'list') { renderList(); loadClients(); }
   if (v === 'form') renderForm();
+  if (v === 'requests') { renderRequests(); loadRequests(); }
   if (v === 'account') { renderAccount(); api('support').then((d) => { support = d.contact || ''; const el = $('#supContact'); if (el && !el.value) el.value = support; }).catch(() => {}); }
+}
+async function loadRequests() {
+  try { requests = (await api('admin/requests')).requests; reqMsg = ''; }
+  catch (e) { reqMsg = e.message; }
+  const n = requests.filter((r) => r.status === 'new').length, badge = $('#reqBadge');
+  if (badge) { badge.hidden = !n; badge.textContent = n ? n + ' new' : ''; }
+  if (view === 'requests') renderRequests();
+}
+const REQ_STATUS = [['new', 'New'], ['contacted', 'Contacted'], ['won', 'Became a client'], ['closed', 'Not interested']];
+function renderRequests() {
+  const when = (t) => new Date(t).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  $('#main').innerHTML = `
+    <div class="stack">
+      <div class="row spread"><h2>Demo requests</h2><span class="note">From the Request a demo form at ${esc(location.origin)}/demo</span></div>
+      ${reqMsg ? `<div class="error">${esc(reqMsg)}</div>` : ''}
+      ${requests.length ? requests.map((r) => `
+        <article class="panel biz">
+          <div class="row spread"><h3>${esc(r.business)}</h3><span class="note">${esc(when(r.createdAt))}</span></div>
+          <p class="note">${esc(r.industry || 'Type not given')}${r.locations ? ' · ' + esc(r.locations) + (r.locations === '1' ? ' location' : ' locations') : ''}</p>
+          <dl class="creds" style="margin:0"><dt>Name</dt><dd>${esc(r.name)}</dd>${r.email ? `<dt>Email</dt><dd>${esc(r.email)}</dd>` : ''}${r.phone ? `<dt>Phone</dt><dd>${esc(r.phone)}</dd>` : ''}</dl>
+          ${r.notes ? `<p style="margin:0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(r.notes)}</p>` : ''}
+          <div class="row">
+            <label for="rs-${esc(r.id)}" class="note" style="display:flex;align-items:center;gap:8px">Status
+              <select id="rs-${esc(r.id)}" data-reqstatus="${esc(r.id)}">${REQ_STATUS.map(([k, l]) => `<option value="${k}" ${r.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+            <button class="btn primary" data-setup="${esc(r.id)}">Set up this business</button>
+            ${confirmReqDel === r.id ? `<button class="btn danger" data-reqdelyes="${esc(r.id)}">Delete request</button><button class="btn" data-act="reqdelno">Keep</button>` : `<button class="btn danger" data-reqdel="${esc(r.id)}">Delete</button>`}
+          </div>
+        </article>`).join('') : '<div class="panel empty">No demo requests yet. They appear here when someone fills in the form on your homepage.</div>'}
+    </div>`;
 }
 async function loadClients() {
   try { clients = (await api('admin/clients')).clients; listMsg = ''; }
@@ -132,7 +164,7 @@ function card(c) {
   const d = trend(c);
   return `<article class="panel biz">
     <div class="row spread"><div class="row"><span class="dot" style="background:${esc(c.color)}"></span><h3>${esc(c.name)}</h3></div>
-      <span class="row" style="gap:6px">${c.selfSignup ? '<span class="pill on">Signed up online</span>' : ''}<span class="pill ${c.autoGoogle ? 'on' : 'off'}">Google ${c.autoGoogle ? 'on' : 'off'}</span></span></div>
+      <span class="row" style="gap:6px">${c.selfSignup ? '<span class="pill on">Signed up online</span>' : ''}<span class="pill ${c.autoGoogle ? 'on' : 'warn'}">${c.autoGoogle ? 'Google on' : 'Private · Google off'}</span>${c.fbOn && c.facebook ? '<span class="pill on">Facebook on</span>' : ''}${c.taOn && c.tripadvisor ? '<span class="pill on">Tripadvisor on</span>' : ''}</span></div>
     <p class="note mono">${esc(reviewLink(c))}</p>
     <div class="row" style="gap:18px;font-variant-numeric:tabular-nums">
       <span><span class="note">Last 7 days</span><br><b style="font-family:var(--display);font-size:1.25rem">${fmt(c.stats.week.avg)}</b> ${d != null ? deltaHtml(d) : ''}</span>
@@ -157,7 +189,7 @@ function genPassword() {
   return Array.from(r, (x) => a[x % a.length]).join('');
 }
 function renderForm() {
-  const c = editing || { name: '', slug: '', industry: 'restaurant', google: '', contact: '', color: '#8fa2ff', loginEmail: '', hasLogin: false };
+  const c = editing || { name: '', slug: '', industry: 'restaurant', google: '', contact: '', color: '#8fa2ff', loginEmail: '', hasLogin: false, autoGoogle: false, facebook: '', tripadvisor: '', fbOn: false, taOn: false, ...(prefill || {}) };
   if (creds) {
     $('#main').innerHTML = `
       <div class="panel stack" style="max-width:640px">
@@ -182,7 +214,13 @@ function renderForm() {
         : `<label for="fInd">Type of business <small>Loads the five rating questions for that industry.</small><select id="fInd">${(industries.length ? industries : [{ id: 'restaurant', name: 'Restaurants' }]).map((x) => `<option value="${esc(x.id)}" ${x.id === c.industry ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>`}
       <label for="fColor">Brand color<input id="fColor" type="color" value="${esc(c.color)}"></label>
       <label class="switch" for="fAuto"><input type="checkbox" id="fAuto" ${c.autoGoogle !== false ? 'checked' : ''}><span class="track"></span><span>Send guests to Google after they submit</span></label>
-      <p class="note">Only you can change this; the business owner never sees it. When it's on, every guest is offered Google whatever their rating, which keeps the business within Google's rules.</p>
+      <p class="note">Only you can change this; the business owner never sees it. New businesses start with it off, so reviews stay private during their trial. Turn it on when they become a paying customer. When it's on, every guest is offered Google whatever their rating, which keeps the business within Google's rules.</p>
+      <h3 style="margin-top:8px">Other review sites</h3>
+      <p class="note">Shown as smaller buttons under Google on the thank-you screen, to every customer, when switched on. Yelp isn't offered because Yelp penalizes businesses that ask for reviews.</p>
+      <label for="fFb">Facebook page link <small>Starts with https://</small><input id="fFb" type="url" value="${esc(c.facebook || '')}" placeholder="https://www.facebook.com/yourbusiness/reviews"></label>
+      <label class="switch" for="fFbOn"><input type="checkbox" id="fFbOn" ${c.fbOn ? 'checked' : ''}><span class="track"></span><span>Show "Also on Facebook"</span></label>
+      <label for="fTa">Tripadvisor link <small>Best for restaurants and hotels</small><input id="fTa" type="url" value="${esc(c.tripadvisor || '')}" placeholder="https://www.tripadvisor.com/UserReviewEdit-..."></label>
+      <label class="switch" for="fTaOn"><input type="checkbox" id="fTaOn" ${c.taOn ? 'checked' : ''}><span class="track"></span><span>Show "Also on Tripadvisor"</span></label>
       <h3 style="margin-top:8px">Client login</h3>
       <p class="note">The business owner signs in at <span class="mono">${esc(location.origin)}/login</span> and sees only this business. They can never open this owner console.</p>
       <label for="fEmail">Login email<input id="fEmail" type="email" value="${esc(c.loginEmail)}" placeholder="owner@lunabistro.com" autocomplete="off"></label>
@@ -210,7 +248,7 @@ function renderAccount() {
       <div class="panel stack">
         <h2>Sign-in pages</h2>
         <div><div class="note">Clients sign in here</div><div class="mono">${esc(location.origin)}/login</div></div>
-        <div><div class="note">New businesses sign up here</div><div class="mono">${esc(location.origin)}/signup</div></div>
+        <div><div class="note">Businesses request a demo here (requests show in the Requests tab)</div><div class="mono">${esc(location.origin)}/demo</div></div>
         <div><div class="note">You sign in here. Keep this address private.</div><div class="mono">${esc(location.origin)}/admin.html</div></div>
       </div>
     </div>`;
@@ -219,8 +257,21 @@ function renderAccount() {
 $('#main').addEventListener('click', async (e) => {
   const b = e.target.closest('button'); if (!b) return;
   const find = (id) => clients.find((c) => c.id === id);
-  if (b.dataset.act === 'add') { editing = null; creds = null; go('form'); }
-  if (b.dataset.edit) { editing = find(b.dataset.edit); creds = null; go('form'); }
+  if (b.dataset.act === 'add') { editing = null; creds = null; prefill = null; go('form'); }
+  if (b.dataset.setup) {
+    const r = requests.find((x) => x.id === b.dataset.setup);
+    const ind = r && industries.find((x) => x.name === r.industry);
+    editing = null; creds = null;
+    prefill = r ? { name: r.business, loginEmail: r.email || '', industry: ind ? ind.id : 'restaurant' } : null;
+    go('form'); return;
+  }
+  if (b.dataset.reqdel) { confirmReqDel = b.dataset.reqdel; renderRequests(); }
+  if (b.dataset.act === 'reqdelno') { confirmReqDel = null; renderRequests(); }
+  if (b.dataset.reqdelyes) {
+    try { await api('admin/requests?id=' + encodeURIComponent(b.dataset.reqdelyes), { method: 'DELETE' }); } catch (err) { reqMsg = err.message; }
+    confirmReqDel = null; loadRequests();
+  }
+  if (b.dataset.edit) { editing = find(b.dataset.edit); creds = null; prefill = null; go('form'); }
   if (b.dataset.act === 'cancel' || b.dataset.act === 'done') { creds = null; editing = null; go('list'); }
   if (b.dataset.act === 'gen') { $('#fPass').value = genPassword(); }
   if (b.dataset.act === 'copycreds' && creds) copy(`Your StatTap sign-in\nPage: ${location.origin}/login\nEmail: ${creds.email}\n${creds.reset ? 'Temporary password' : 'Password'}: ${creds.password}\nYou'll choose your own password when you sign in.`, b);
@@ -252,6 +303,11 @@ $('#main').addEventListener('click', async (e) => {
     dash = RD.Dashboard($('#dashRoot'), { clientId: b.dataset.open, isOwner: true, onBack: () => go('list') });
   }
 });
+$('#main').addEventListener('change', async (e) => {
+  const t = e.target; if (!t.dataset.reqstatus) return;
+  try { await api('admin/requests', { method: 'PATCH', body: JSON.stringify({ id: t.dataset.reqstatus, status: t.value }) }); loadRequests(); }
+  catch (err) { reqMsg = err.message; renderRequests(); }
+});
 $('#main').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (e.target.id === 'clientForm') {
@@ -260,9 +316,9 @@ $('#main').addEventListener('submit', async (e) => {
     try {
       const c = await api('admin/clients', { method: 'POST', body: JSON.stringify({
         id: editing?.id, name: $('#fName').value, google: $('#fGoogle').value, contact: $('#fContact').value,
-        color: $('#fColor').value, autoGoogle: $('#fAuto').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
-      if (pw) { creds = { name: c.name, email: c.loginEmail, password: pw }; renderForm(); }
-      else { editing = null; go('list'); }
+        color: $('#fColor').value, autoGoogle: $('#fAuto').checked, facebook: $('#fFb').value.trim(), tripadvisor: $('#fTa').value.trim(), fbOn: $('#fFbOn').checked, taOn: $('#fTaOn').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
+      if (pw) { prefill = null; creds = { name: c.name, email: c.loginEmail, password: pw }; renderForm(); }
+      else { editing = null; prefill = null; go('list'); }
     } catch (err) { $('#fMsg').textContent = err.message; }
     finally { const s = $('#fSave'); if (s) s.disabled = false; }
   }

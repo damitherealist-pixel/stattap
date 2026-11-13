@@ -347,6 +347,12 @@
             <label for="sGoogle">Google review link or Place ID<input id="sGoogle" type="text" value="${esc(c.google)}" placeholder="https://g.page/r/.../review"></label>
             <label for="sContact">Contact for unhappy guests <small>Shown to guests who rate 1–3 stars.</small><input id="sContact" type="text" value="${esc(c.contact)}" placeholder="manager@restaurant.com or phone"></label>
             <label for="sColor">Brand color<input id="sColor" type="color" value="${esc(c.color)}"></label>
+            <h2 style="margin-top:6px">Other review sites</h2>
+            <p class="note">${isOwner ? 'Shown under the Google button to every customer when switched on. Only you can turn these on or off.' : 'Add your links here. StatTap turns these buttons on for you.'}</p>
+            <label for="sFb">Facebook page link<input id="sFb" type="url" value="${esc(c.facebook || '')}" placeholder="https://www.facebook.com/yourbusiness/reviews"></label>
+            ${isOwner ? `<label class="switch" for="sFbOn"><input type="checkbox" id="sFbOn" ${c.fbOn ? 'checked' : ''}><span class="track"></span><span>Show "Also on Facebook"</span></label>` : ''}
+            <label for="sTa">Tripadvisor link<input id="sTa" type="url" value="${esc(c.tripadvisor || '')}" placeholder="https://www.tripadvisor.com/UserReviewEdit-..."></label>
+            ${isOwner ? `<label class="switch" for="sTaOn"><input type="checkbox" id="sTaOn" ${c.taOn ? 'checked' : ''}><span class="track"></span><span>Show "Also on Tripadvisor"</span></label>` : ''}
             <div class="row"><button class="btn primary" type="submit">Save settings</button><span class="note" id="sMsg" role="status"></span></div>
           </form>
           ${isOwner ? `
@@ -425,7 +431,8 @@
     root.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (e.target.id === 'settingsForm') {
-        await saveSettings({ google: $('#sGoogle', root).value, contact: $('#sContact', root).value, color: $('#sColor', root).value, ...(isOwner && $('#sAuto', root) ? { autoGoogle: $('#sAuto', root).checked } : {}) }, $('#sMsg', root));
+        await saveSettings({ google: $('#sGoogle', root).value, contact: $('#sContact', root).value, color: $('#sColor', root).value, facebook: $('#sFb', root).value.trim(), tripadvisor: $('#sTa', root).value.trim(),
+          ...(isOwner && $('#sAuto', root) ? { autoGoogle: $('#sAuto', root).checked, fbOn: $('#sFbOn', root).checked, taOn: $('#sTaOn', root).checked } : {}) }, $('#sMsg', root));
       }
       if (e.target.id === 'pwForm') {
         const msg = $('#pMsg', root);

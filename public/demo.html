@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0e15">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>Request a demo · StatTap</title>
+<meta name="description" content="Request a StatTap demo. We set up your review questions, Google link and NFC cards for you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<header class="nav" id="siteNav">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="StatTap home">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L96 50 L50 96 L4 50 Z" fill="none" stroke="#d6b373" stroke-width="3"/><path d="M50 13 L87 50 L50 87 L13 50 Z" fill="none" stroke="#d6b373" stroke-width="1.4"/><text x="50" y="63" text-anchor="middle" font-family="Cinzel,Georgia,serif" font-weight="600" font-size="38" fill="#d6b373">S</text></svg>
+      <span>STAT TAP</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="/#how">How it works</a><a href="/#industries">Industries</a><a href="/#dashboard">Dashboard</a><a href="/#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-line btn-sm" href="/login">Log in</a>
+      <a class="btn btn-gold btn-sm" href="/demo">Request a demo</a>
+    </div>
+  </div>
+</header>
+<main>
+<section class="view" id="v-demo">
+  <div class="wrap"><div class="app-narrow">
+    <div class="app-head"><div class="eyebrow">Request a demo</div><h1 id="dTitle">See StatTap working for your business.</h1>
+      <p class="lead" id="dLead">Tell us a little about your business. We'll reach out to set up a short demo, and when you're ready we handle everything: your review questions, your Google link and your programmed NFC cards.</p></div>
+    <form class="panel2" id="demoForm" novalidate>
+      <div class="fields" id="dFields">
+        <label class="f" for="dBiz">Business name<input class="inp" id="dBiz" type="text" maxlength="160" autocomplete="organization" placeholder="e.g. Crown Cuts Barbershop"></label>
+        <label class="f" for="dInd">Type of business<select class="inp" id="dInd"><option value="">Choose one</option></select></label>
+        <label class="f" for="dLoc">Number of locations<select class="inp" id="dLoc"><option>1</option><option>2–5</option><option>6 or more</option></select></label>
+        <label class="f" for="dName">Your name<input class="inp" id="dName" type="text" maxlength="120" autocomplete="name"></label>
+        <label class="f" for="dEmail">Email<input class="inp" id="dEmail" type="email" maxlength="200" autocomplete="email" placeholder="you@yourbusiness.com"></label>
+        <label class="f" for="dPhone">Phone <small>Optional, if you'd rather we call or text</small><input class="inp" id="dPhone" type="tel" maxlength="40" autocomplete="tel"></label>
+        <label class="f" for="dNotes">Anything we should know? <small>Optional</small><textarea class="inp" id="dNotes" maxlength="1000" placeholder="Best time to reach you, what you'd like reviews to help with…"></textarea></label>
+        <label class="hp" for="dWebsite" aria-hidden="true">Website<input id="dWebsite" type="text" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <div class="err" id="dErr" role="alert" style="margin-top:14px"></div>
+      <div class="navrow" id="dNav" style="justify-content:flex-end"><button class="btn btn-gold" type="submit" id="dSend">Request my demo</button></div>
+      <div class="fields" id="dDone" hidden>
+        <div style="display:flex;gap:14px;align-items:center"><span style="width:52px;height:52px;border-radius:50%;background:rgba(62,207,142,.14);display:grid;place-items:center;flex:none"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+          <div><strong style="font-size:19px">Thanks, we got your request.</strong><p style="color:var(--muted);font-size:14.5px;margin-top:4px">We'll be in touch within one business day to set up your demo.</p></div></div>
+        <div class="hero-ctas" style="margin-top:6px"><a class="btn btn-line" href="/">Back to StatTap</a></div>
+      </div>
+      <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:18px">Already a StatTap client? <a href="/login" style="color:var(--brass)">Log in</a></p>
+    </form>
+  </div></div>
+</section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+fetch('/api/industries').then(r=>r.json()).then(d=>{
+  const sel=$('dInd');(d.industries||[]).forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.name;sel.appendChild(o)});
+}).catch(()=>{});
+$('demoForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const err=m=>{$('dErr').textContent=m};err('');
+  const body={business:$('dBiz').value.trim(),industry:$('dInd').value,locations:$('dLoc').value,name:$('dName').value.trim(),
+    email:$('dEmail').value.trim(),phone:$('dPhone').value.trim(),notes:$('dNotes').value.trim(),website:$('dWebsite').value};
+  if(!body.business)return err('Enter your business name.');
+  if(!body.name)return err('Enter your name.');
+  if(!body.email&&!body.phone)return err('Add an email or phone number so we can reach you.');
+  if(body.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email))return err('Check your email address.');
+  const btn=$('dSend');btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const r=await fetch('/api/demo-request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||'That didn\'t send. Try again.');
+    $('dFields').hidden=true;$('dNav').hidden=true;$('dDone').hidden=false;$('dTitle').textContent='Request sent.';$('dLead').hidden=true;window.scrollTo(0,0);
+  }catch(x){err(x.message||'That didn\'t send. Check your connection and try again.')}
+  finally{btn.disabled=false;btn.textContent='Request my demo'}
+});
+})();
+</script>
+</body>
+</html>

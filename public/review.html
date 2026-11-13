@@ -126,6 +126,9 @@ function renderForm(c) {
 function renderThanks(c, rating, body, wasCopied) {
   // Every customer is offered Google, whatever their rating, unless the StatTap owner switched it off.
   const g = googleUrl(c.google), low = rating <= 3, auto = c.autoGoogle !== false && !!g;
+  // Facebook and Tripadvisor appear only when the owner switched them on, and to every customer alike.
+  const others = [[c.facebook, 'Also review us on Facebook'], [c.tripadvisor, 'Also review us on Tripadvisor']]
+    .filter(([u]) => /^https:\/\//i.test(u || '')).map(([url, label]) => ({ url, label }));
   $('#card').innerHTML = `
     <div style="text-align:center">${starsText(rating)}</div>
     <h2 style="text-align:center">${low ? 'Thank you for telling us.' : 'Thank you!'}</h2>
@@ -138,7 +141,11 @@ function renderThanks(c, rating, body, wasCopied) {
       </div>
       <a class="btn primary block" href="${esc(g)}" id="goNow">${body ? 'Open Google now and paste' : 'Open Google now'}</a>
       <button class="btn ghost block" type="button" id="stay">Stay on this page</button>` : ''}
+    ${others.length ? `<div style="display:grid;gap:8px">${auto ? '' : '<p class="note" style="text-align:center;margin:0">Want to share your review?</p>'}
+      ${others.map((o) => `<a class="btn block" href="${esc(o.url)}" target="_blank" rel="noopener" data-other>${esc(o.label)}</a>`).join('')}
+      ${body ? '<p class="note" style="text-align:center;margin:0">Your review is copied, so you can paste it there too.</p>' : ''}</div>` : ''}
     <div class="foot">You can close this page. · Powered by StatTap</div>`;
+  document.querySelectorAll('[data-other]').forEach((a) => a.addEventListener('click', () => { if (body && navigator.clipboard) navigator.clipboard.writeText(body).catch(() => {}); }));
   const cc = $('#copyContact');
   if (cc) cc.addEventListener('click', () => navigator.clipboard?.writeText(c.contact).then(() => { cc.textContent = 'Copied'; }).catch(() => {}));
   if (!auto) return;

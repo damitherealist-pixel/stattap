@@ -12,9 +12,15 @@
   status = 200
 
 [[redirects]]
-  from = "/signup"
-  to = "/signup.html"
+  from = "/demo"
+  to = "/demo.html"
   status = 200
+
+# Public sign-up was replaced by demo requests; old links land on the demo form.
+[[redirects]]
+  from = "/signup"
+  to = "/demo"
+  status = 301
 
 # Business review pages: stattap.net/<business-address> shows the review page.
 # Real files (index, login, signup, admin.html, review.html, images) are served first.

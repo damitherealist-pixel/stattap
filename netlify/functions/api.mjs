@@ -5,10 +5,12 @@ import { timingSafeEqual, randomUUID, scryptSync, randomBytes, createHmac, rando
    Roles:
    - owner  : the SaaS owner. Manages every business. Signs in at /admin.html
    - client : a business owner. Sees only their own business. Signs in at /login
-   - public : customers leaving a review (no login), and new businesses signing up
+   - public : customers leaving a review (no login), and businesses requesting a demo.
+              Businesses are set up by the owner only; there is no public self sign-up.
    Google: after submitting, every customer is offered the business's Google review page, whatever
    their rating (no review gating). Only the owner can switch this on or off for a business;
-   clients can't change it. It's on by default.
+   clients can't change it. New businesses start with it OFF (private trial); the owner turns it
+   on by hand when the business becomes a paying customer. Older businesses without the setting stay on.
 */
 
 const DAY = 86400000;
@@ -71,6 +73,12 @@ const INDUSTRIES = [
     { label: "Checkout", hint: "Quick line and payment" },
     { label: "Store tidiness", hint: "Clean and easy to shop" },
     { label: "Value", hint: "Fair prices" } ] },
+  { id: "notary", name: "Notary", questions: [
+    { label: "On time", hint: "Arrived or ready at the scheduled time" },
+    { label: "Accuracy", hint: "Documents done right, no errors or rejections" },
+    { label: "Professionalism", hint: "Knowledgeable, explained what to sign" },
+    { label: "Convenience", hint: "Easy to book, flexible hours or location" },
+    { label: "Fair pricing", hint: "Fees clear up front, no surprises" } ] },
   { id: "other", name: "Something else", questions: [
     { label: "Overall quality", hint: "How good the product or service was" },
     { label: "Customer service", hint: "Friendly and helpful staff" },
@@ -111,6 +119,8 @@ const newHash = (pw) => {
 };
 const checkPw = (pw, rec) => !!(rec && rec.salt && rec.hash && pw && same(rec.hash, hashPw(pw, rec.salt)));
 const loginKey = (email) => `logins/${encodeURIComponent(email)}`;
+// Facebook / Tripadvisor links: web addresses only (never javascript: or other schemes).
+const webLink = (v) => { const s = clean(v, 600); return /^https:\/\/[^\s"'<>]+$/i.test(s) ? s : ""; };
 const brandColor = (c) => (/^#[0-9a-f]{6}$/i.test(c || "") ? c : "#8fa2ff");
 const tempPassword = () => {
   const a = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
@@ -173,9 +183,12 @@ const publicClient = (c) => ({
   id: c.id, name: c.name, slug: c.slug || "", google: c.google || "", contact: c.contact || "",
   color: brandColor(c.color), questions: questionsOf(c),
   autoGoogle: c.autoGoogle !== false, // on unless the owner turned it off
+  facebook: c.fbOn && c.facebook ? c.facebook : "",
+  tripadvisor: c.taOn && c.tripadvisor ? c.tripadvisor : "",
 });
 const fullClient = (c) => ({
   ...publicClient(c), industry: c.industry || "restaurant", loginEmail: c.loginEmail || "",
+  facebook: c.facebook || "", tripadvisor: c.tripadvisor || "", fbOn: !!c.fbOn, taOn: !!c.taOn,
   hasLogin: !!c.pwHash, mustChange: !!c.mustChange, selfSignup: !!c.selfSignup, createdAt: c.createdAt,
 });
 
@@ -292,36 +305,29 @@ export default async (req) => {
       return json({ ok: true });
     }
 
-    if (route === "signup" && m === "POST") {
+    // Businesses are set up by the owner. Old sign-up calls get a clear answer.
+    if (route === "signup" && m === "POST")
+      return json({ error: "StatTap accounts are set up for you. Request a demo at stattap.net/demo." }, 410);
+
+    if (route === "demo-request" && m === "POST") {
       const b = await readBody();
-      if (clean(b.website, 200)) return json({ error: "Sign-up failed." }, 400); // honeypot field real people never see
-      const name = clean(b.name, 160);
-      const slug = String(b.slug || "").trim().toLowerCase();
+      if (clean(b.website, 200)) return json({ ok: true }); // honeypot: pretend success for bots
+      const business = clean(b.business, 160), name = clean(b.name, 120);
+      const email = normEmail(b.email), phone = clean(b.phone, 40);
+      if (!business) return json({ error: "Enter your business name.", field: "business" }, 400);
+      if (!name) return json({ error: "Enter your name.", field: "name" }, 400);
+      if (email && !isEmail(email)) return json({ error: "Check your email address.", field: "email" }, 400);
+      if (!email && !phone) return json({ error: "Add an email or phone number so we can reach you.", field: "email" }, 400);
+      if (await overLimit(s, req, "demo", 5)) return json({ error: "Too many requests from this connection. Try again later." }, 429);
       const ind = industry(b.industry);
-      const email = normEmail(b.email);
-      const pw = String(b.password || "").trim();
-      if (!name) return json({ error: "Enter your business name.", field: "name" }, 400);
-      if (!isSlug(slug)) return json({ error: "Use 3 to 40 lowercase letters, numbers or single dashes for your address. Some words are reserved.", field: "slug" }, 400);
-      if (!ind) return json({ error: "Choose the type of business that fits best.", field: "industry" }, 400);
-      const q = cleanQuestions(b.questions, ind.questions);
-      if (q.error) return json({ error: q.error, field: "questions" }, 400);
-      if (!isEmail(email)) return json({ error: "Enter a valid email for your login.", field: "email" }, 400);
-      if (pw.length < 8) return json({ error: "Your password needs at least 8 characters.", field: "password" }, 400);
-      if (await s.get(loginKey(email), { type: "json" })) return json({ error: "That email already has a StatTap account. Log in instead.", field: "email" }, 409);
-      if (!(await slugFree(s, slug, null))) return json({ error: "That address is taken. Try adding your city.", field: "slug" }, 409);
-      if (await overLimit(s, req, "signup", 5)) return json({ error: "Too many sign-ups from this connection. Try again later." }, 429);
-      const id = randomUUID();
-      const h = newHash(pw);
-      const c = {
-        id, name, slug, industry: ind.id, questions: q.qs,
-        google: clean(b.google, 600), contact: clean(b.contact, 200), color: brandColor(b.color),
-        loginEmail: email, pwSalt: h.salt, pwHash: h.hash, ver: 1, selfSignup: true, autoGoogle: true,
-        createdAt: new Date().toISOString(),
-      };
-      await s.setJSON(slugKey(slug), { clientId: id });
-      await s.setJSON(loginKey(email), { clientId: id });
-      await s.setJSON(`clients/${id}`, c);
-      return json({ token: await makeToken(s, { r: "client", c: id, v: 1 }), role: "client", client: fullClient(c) });
+      const id = `${Date.now().toString(36)}-${randomUUID().slice(0, 8)}`;
+      await s.setJSON(`requests/${id}`, {
+        id, business, name, email, phone,
+        industry: ind ? ind.name : clean(b.industry, 60),
+        locations: clean(b.locations, 20), notes: clean(b.notes, 1000),
+        status: "new", createdAt: new Date().toISOString(),
+      });
+      return json({ ok: true });
     }
 
     if (route === "setup" && m === "GET") {
@@ -392,7 +398,11 @@ export default async (req) => {
         createdAt: existing?.createdAt || new Date().toISOString(),
       };
       if ("autoGoogle" in b) c.autoGoogle = !!b.autoGoogle;
-      else if (!existing) c.autoGoogle = true;
+      else if (!existing) c.autoGoogle = false; // new businesses start private
+      if ("facebook" in b) { c.facebook = webLink(b.facebook); if (clean(b.facebook, 600) && !c.facebook) return json({ error: "The Facebook link must start with https://" }, 400); }
+      if ("tripadvisor" in b) { c.tripadvisor = webLink(b.tripadvisor); if (clean(b.tripadvisor, 600) && !c.tripadvisor) return json({ error: "The Tripadvisor link must start with https://" }, 400); }
+      if ("fbOn" in b) c.fbOn = !!b.fbOn;
+      if ("taOn" in b) c.taOn = !!b.taOn;
       // Industry and questions are set when the business is created. Changing them later would
       // mix old and new scores, so an existing business keeps its questions.
       if (!existing) {
@@ -443,6 +453,28 @@ export default async (req) => {
       const b = await readBody();
       await s.setJSON("config/support", { contact: clean(b.contact, 200) });
       return json({ contact: clean(b.contact, 200) });
+    }
+
+    if (route === "admin/requests" && m === "GET") {
+      const { blobs } = await s.list({ prefix: "requests/" });
+      const requests = (await getMany(s, blobs.map((x) => x.key))).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return json({ requests });
+    }
+    if (route === "admin/requests" && m === "PATCH") {
+      const b = await readBody();
+      if (!/^[a-z0-9-]{6,64}$/.test(String(b.id || "")) || !["new", "contacted", "won", "closed"].includes(b.status))
+        return json({ error: "Invalid update" }, 400);
+      const r = await s.get(`requests/${b.id}`, { type: "json" });
+      if (!r) return json({ error: "Request not found" }, 404);
+      r.status = b.status;
+      await s.setJSON(`requests/${b.id}`, r);
+      return json(r);
+    }
+    if (route === "admin/requests" && m === "DELETE") {
+      const id = String(url.searchParams.get("id") || "");
+      if (!/^[a-z0-9-]{6,64}$/.test(id)) return json({ error: "Invalid id" }, 400);
+      await s.delete(`requests/${id}`);
+      return json({ ok: true });
     }
 
     if (route === "admin/clients" && m === "DELETE") {
@@ -505,6 +537,10 @@ export default async (req) => {
       if ("contact" in b) c.contact = clean(b.contact, 200);
       if ("color" in b) c.color = brandColor(b.color);
       if ("autoGoogle" in b && isOwner) c.autoGoogle = !!b.autoGoogle; // owner only; ignored from clients
+      if ("fbOn" in b && isOwner) c.fbOn = !!b.fbOn;
+      if ("taOn" in b && isOwner) c.taOn = !!b.taOn;
+      if ("facebook" in b) { const v = webLink(b.facebook); if (clean(b.facebook, 600) && !v) return json({ error: "The Facebook link must start with https://" }, 400); c.facebook = v; }
+      if ("tripadvisor" in b) { const v = webLink(b.tripadvisor); if (clean(b.tripadvisor, 600) && !v) return json({ error: "The Tripadvisor link must start with https://" }, 400); c.tripadvisor = v; }
       await s.setJSON(`clients/${c.id}`, c);
       return json(fullClient(c));
     }
