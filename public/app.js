@@ -205,6 +205,10 @@
           <div class="tabs" role="tablist">${[['reviews', 'Reviews'], ['report', 'Weekly report'], ['settings', 'Settings']]
             .map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${st.tab === k}">${l}</button>`).join('')}</div>
         </div>
+        ${c.plan === 'trial' ? `<div class="callout" style="margin-bottom:16px"><strong>${c.trialDaysLeft > 0
+          ? `${isOwner ? 'Demo' : 'Your free demo'}: ${c.trialDaysLeft} day${c.trialDaysLeft === 1 ? '' : 's'} left`
+          : (isOwner ? 'This demo has ended. Go live or end it from the Businesses page.' : 'Your free demo has ended. StatTap will be in touch about going live.')}</strong>
+          <span>Reviews are private during the demo, so customers aren't sent to Google yet.${isOwner ? '' : ' Everything they tell you shows up here.'}</span></div>` : ''}
         <div id="pane"></div>`;
       renderPane();
     }
@@ -340,7 +344,11 @@
           </div>
           <form class="panel form" id="settingsForm">
             <h2>Google reviews</h2>
-            ${isOwner
+            ${isOwner && c.plan !== 'live'
+              ? `<p class="note">This business is on a demo, so customers aren't sent to Google. Google turns on when you choose Go live on the Businesses page.</p>`
+              : !isOwner && c.plan === 'trial'
+              ? `<p class="note">During your demo, reviews stay private here. When you go live, every guest will be offered your Google review page after they submit.</p>`
+              : isOwner
               ? `<label class="switch" for="sAuto"><input type="checkbox" id="sAuto" ${c.autoGoogle ? 'checked' : ''}><span class="track"></span><span>Send guests to Google after they submit</span></label>
             <p class="note">Only you, the StatTap owner, can change this. The business owner doesn't see this switch. When it's on, every guest is offered Google whatever their rating, which keeps the business within Google's rules.</p>`
               : `<p class="note">After submitting, every guest is offered your Google review page with their review already copied, so they only paste it and press Post. Every guest gets this whatever their rating, which keeps your business within Google's rules.</p>`}
@@ -432,7 +440,7 @@
       e.preventDefault();
       if (e.target.id === 'settingsForm') {
         await saveSettings({ google: $('#sGoogle', root).value, contact: $('#sContact', root).value, color: $('#sColor', root).value, facebook: $('#sFb', root).value.trim(), tripadvisor: $('#sTa', root).value.trim(),
-          ...(isOwner && $('#sAuto', root) ? { autoGoogle: $('#sAuto', root).checked, fbOn: $('#sFbOn', root).checked, taOn: $('#sTaOn', root).checked } : {}) }, $('#sMsg', root));
+          ...(isOwner ? { ...($('#sAuto', root) ? { autoGoogle: $('#sAuto', root).checked } : {}), fbOn: $('#sFbOn', root).checked, taOn: $('#sTaOn', root).checked } : {}) }, $('#sMsg', root));
       }
       if (e.target.id === 'pwForm') {
         const msg = $('#pMsg', root);

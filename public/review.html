@@ -41,6 +41,7 @@ async function start() {
   let c = null;
   try { const r = await fetch('/api/client?' + (id ? 'id=' + encodeURIComponent(id) : 'slug=' + encodeURIComponent(slug))); if (r.ok) c = await r.json(); } catch (e) {}
   if (!c) { $('#card').innerHTML = '<div class="empty">We couldn\'t find this business. Please check the link, or ask the business for a new one.</div>'; return; }
+  if (c.active === false) { $('#card').innerHTML = '<div class="empty">This StatTap card isn\'t active right now. Thanks for stopping by.</div>'; return; }
   if (Array.isArray(c.questions) && c.questions.length) CATS = c.questions;
   renderForm(c);
 }

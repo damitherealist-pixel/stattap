@@ -9,11 +9,18 @@ import { timingSafeEqual, randomUUID, scryptSync, randomBytes, createHmac, rando
               Businesses are set up by the owner only; there is no public self sign-up.
    Google: after submitting, every customer is offered the business's Google review page, whatever
    their rating (no review gating). Only the owner can switch this on or off for a business;
-   clients can't change it. New businesses start with it OFF (private trial); the owner turns it
-   on by hand when the business becomes a paying customer. Older businesses without the setting stay on.
+   clients can't change it.
+   Demo (trial): every new business starts as a demo (default 14 days). During a demo, reviews stay
+   private and Google is always off. When it ends, the owner console flags it; nothing changes until
+   the owner chooses: Go live (Google on), Extend, or End (cards stop working, client can't sign in).
+   Businesses created before demos existed have no plan and count as live.
 */
 
 const DAY = 86400000;
+const TRIAL_DAYS = 14;
+// "trial" | "live" | "ended". Businesses made before demos existed have no plan: they're live.
+const planOf = (c) => (["trial", "live", "ended"].includes(c.plan) ? c.plan : "live");
+const trialDaysLeft = (c) => (planOf(c) === "trial" ? Math.ceil((Date.parse(c.trialEnds || 0) - Date.now()) / DAY) : null);
 const TOKEN_DAYS = 30;
 
 /* ---------- Industry question sets ----------
@@ -172,7 +179,7 @@ async function authenticate(s, req) {
   }
   if (p.r === "client" && isId(p.c)) {
     const c = await s.get(`clients/${p.c}`, { type: "json" });
-    if (!c || !c.pwHash || (c.ver || 1) !== p.v) return null;
+    if (!c || !c.pwHash || (c.ver || 1) !== p.v || planOf(c) === "ended") return null;
     return { role: "client", client: c };
   }
   return null;
@@ -182,7 +189,8 @@ async function authenticate(s, req) {
 const publicClient = (c) => ({
   id: c.id, name: c.name, slug: c.slug || "", google: c.google || "", contact: c.contact || "",
   color: brandColor(c.color), questions: questionsOf(c),
-  autoGoogle: c.autoGoogle !== false, // on unless the owner turned it off
+  autoGoogle: planOf(c) === "live" && c.autoGoogle !== false, // never during a demo
+  active: planOf(c) !== "ended",
   facebook: c.fbOn && c.facebook ? c.facebook : "",
   tripadvisor: c.taOn && c.tripadvisor ? c.tripadvisor : "",
 });
@@ -190,6 +198,7 @@ const fullClient = (c) => ({
   ...publicClient(c), industry: c.industry || "restaurant", loginEmail: c.loginEmail || "",
   facebook: c.facebook || "", tripadvisor: c.tripadvisor || "", fbOn: !!c.fbOn, taOn: !!c.taOn,
   hasLogin: !!c.pwHash, mustChange: !!c.mustChange, selfSignup: !!c.selfSignup, createdAt: c.createdAt,
+  plan: planOf(c), trialEnds: c.trialEnds || null, trialDaysLeft: trialDaysLeft(c), googleSetting: c.autoGoogle !== false,
 });
 
 /* ---------- Slugs ---------- */
@@ -287,6 +296,7 @@ export default async (req) => {
         return json({ error: "Please choose an overall rating." }, 400);
       const c = await s.get(`clients/${b.clientId}`, { type: "json" });
       if (!c) return json({ error: "Unknown business" }, 404);
+      if (planOf(c) === "ended") return json({ error: "This StatTap card isn't active right now." }, 403);
       const cats = {};
       for (const q of questionsOf(c)) {
         const v = Number(b.cats?.[q.k]);
@@ -361,6 +371,7 @@ export default async (req) => {
         await sleep(500);
         return json({ error: "That email or password is not right." }, 401);
       }
+      if (planOf(c) === "ended") return json({ error: "Your StatTap demo has ended. Contact StatTap to go live." }, 403);
       return json({ token: await makeToken(s, { r: "client", c: c.id, v: c.ver || 1 }), role: "client", mustChange: !!c.mustChange });
     }
 
@@ -408,6 +419,8 @@ export default async (req) => {
       if (!existing) {
         const ind = industry(b.industry) || INDUSTRIES[0];
         c.industry = ind.id; c.questions = ind.questions;
+        const days = Math.min(90, Math.max(1, parseInt(b.trialDays, 10) || TRIAL_DAYS));
+        c.plan = "trial"; c.trialEnds = new Date(Date.now() + days * DAY).toISOString();
       }
       const slugErr = await setSlug(s, c, String(b.slug ?? c.slug ?? "").trim().toLowerCase());
       if (slugErr) return json({ error: slugErr }, 400);
@@ -453,6 +466,23 @@ export default async (req) => {
       const b = await readBody();
       await s.setJSON("config/support", { contact: clean(b.contact, 200) });
       return json({ contact: clean(b.contact, 200) });
+    }
+
+    // Demo lifecycle: go live, extend, or end.
+    if (route === "admin/plan" && m === "POST") {
+      const b = await readBody();
+      const c = isId(b.id) ? await s.get(`clients/${b.id}`, { type: "json" }) : null;
+      if (!c) return json({ error: "Business not found" }, 404);
+      if (b.action === "live") { c.plan = "live"; c.autoGoogle = true; c.liveSince = new Date().toISOString(); }
+      else if (b.action === "extend") {
+        const days = Math.min(90, Math.max(1, parseInt(b.days, 10) || 7));
+        const from = planOf(c) === "trial" ? Math.max(Date.now(), Date.parse(c.trialEnds || 0) || 0) : Date.now();
+        c.plan = "trial"; c.trialEnds = new Date(from + days * DAY).toISOString();
+      }
+      else if (b.action === "end") { c.plan = "ended"; c.endedAt = new Date().toISOString(); }
+      else return json({ error: "Unknown action" }, 400);
+      await s.setJSON(`clients/${c.id}`, c);
+      return json(fullClient(c));
     }
 
     if (route === "admin/requests" && m === "GET") {
