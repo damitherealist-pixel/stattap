@@ -205,7 +205,9 @@ const fullClient = (c) => ({
 async function slugFree(s, slug, ownId) {
   if (!isSlug(slug)) return false;
   const m = await s.get(slugKey(slug), { type: "json" });
-  return !m || m.clientId === ownId;
+  if (!m || m.clientId === ownId) return true;
+  // An address left behind by a save that never finished (or a deleted business) is free again.
+  return !(await s.get(`clients/${m.clientId}`, { type: "json" }));
 }
 async function setSlug(s, c, slug) {
   if ((c.slug || "") === slug) return null;
@@ -422,8 +424,11 @@ export default async (req) => {
         const days = Math.min(90, Math.max(1, parseInt(b.trialDays, 10) || TRIAL_DAYS));
         c.plan = "trial"; c.trialEnds = new Date(Date.now() + days * DAY).toISOString();
       }
-      const slugErr = await setSlug(s, c, String(b.slug ?? c.slug ?? "").trim().toLowerCase());
-      if (slugErr) return json({ error: slugErr }, 400);
+      const wantSlug = String(b.slug ?? c.slug ?? "").trim().toLowerCase();
+      if (wantSlug !== (c.slug || "") && wantSlug) {
+        if (!isSlug(wantSlug)) return json({ error: "Use 3 to 40 lowercase letters, numbers or single dashes. Some words are reserved." }, 400);
+        if (!(await slugFree(s, wantSlug, id))) return json({ error: "That address is taken. Try adding your city." }, 400);
+      }
       const email = normEmail(b.loginEmail);
       const pw = String(b.password || "").trim();
       if (email) {
@@ -439,6 +444,9 @@ export default async (req) => {
         const h = newHash(pw);
         c.pwSalt = h.salt; c.pwHash = h.hash; c.ver = (c.ver || 1) + 1; c.mustChange = true;
       }
+      // Reserve the address only once everything else has passed, so a failed save can't lock it.
+      const slugErr = await setSlug(s, c, wantSlug);
+      if (slugErr) return json({ error: slugErr }, 400);
       const oldEmail = existing?.loginEmail || "";
       if (oldEmail && oldEmail !== email) {
         await s.delete(loginKey(oldEmail));

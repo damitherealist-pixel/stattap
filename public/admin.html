@@ -357,7 +357,7 @@ $('#main').addEventListener('submit', async (e) => {
         color: $('#fColor').value, ...($('#fAuto') ? { autoGoogle: $('#fAuto').checked } : {}), trialDays: $('#fTrial') ? $('#fTrial').value : undefined, facebook: $('#fFb').value.trim(), tripadvisor: $('#fTa').value.trim(), fbOn: $('#fFbOn').checked, taOn: $('#fTaOn').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
       if (pw) { prefill = null; creds = { name: c.name, email: c.loginEmail, password: pw }; renderForm(); }
       else { editing = null; prefill = null; go('list'); }
-    } catch (err) { $('#fMsg').textContent = err.message; }
+    } catch (err) { $('#fMsg').textContent = err.message; $('#fMsg').scrollIntoView({ block: 'center', behavior: 'smooth' }); }
     finally { const s = $('#fSave'); if (s) s.disabled = false; }
   }
   if (e.target.id === 'supportForm') {
