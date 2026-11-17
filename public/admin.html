@@ -236,9 +236,10 @@ function renderForm() {
       <label for="fGoogle">Google review link or Place ID <small>From the business's Google Business Profile, under "Ask for reviews".</small><input id="fGoogle" type="text" value="${esc(c.google)}" placeholder="https://g.page/r/.../review"></label>
       <label for="fContact">Contact for unhappy guests <small>Shown to guests who rate 1–3 stars.</small><input id="fContact" type="text" value="${esc(c.contact)}" placeholder="manager@restaurant.com or phone"></label>
       <label for="fSlug">StatTap address <small>Letters, numbers and dashes. The review page opens at ${esc(location.origin)}/<b>address</b>. Leave blank to keep the long link.</small><input id="fSlug" type="text" value="${esc(c.slug || '')}" placeholder="luna-bistro" autocapitalize="off" spellcheck="false"></label>
-      ${editing
-        ? `<p class="note">Questions: ${esc((c.questions || []).map((q) => q.label).join(', '))}. These stay fixed so old and new scores line up.</p>`
-        : `<label for="fInd">Type of business <small>Loads the five rating questions for that industry.</small><select id="fInd">${(industries.length ? industries : [{ id: 'restaurant', name: 'Restaurants' }]).map((x) => `<option value="${esc(x.id)}" ${x.id === c.industry ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>`}
+      ${editing ? '' : `<label for="fInd">Type of business <small>Loads five starter questions. You can change any of them below.</small><select id="fInd">${(industries.length ? industries : [{ id: 'restaurant', name: 'Restaurants' }]).map((x) => `<option value="${esc(x.id)}" ${x.id === c.industry ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>`}
+      <h3 style="margin-top:8px">Rating questions</h3>
+      <p class="note">${editing ? 'Fix wording anytime. If you change what a question is about, older scores for it will mix with the new ones.' : 'The five things customers rate. Short names work best.'}</p>
+      <div id="qRows" class="stack" style="gap:8px"></div>
       <label for="fColor">Brand color<input id="fColor" type="color" value="${esc(c.color)}"></label>
       ${!editing ? `<label for="fTrial">Demo length <small>The business starts as a private demo: reviews go to their dashboard only and Google stays off. You'll be reminded when it ends.</small><select id="fTrial"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></label>`
         : c.plan === 'live'
@@ -259,7 +260,16 @@ function renderForm() {
       ${editing && c.hasLogin ? `<div class="row"><button class="btn" type="button" data-reset="${esc(c.id)}">Reset password</button><span class="note">Makes a temporary password and signs them out. They choose a new one at next sign-in.</span></div>` : ''}
       <div class="row"><button class="btn primary" type="submit" id="fSave">${editing ? 'Save changes' : 'Add business'}</button><span class="error" id="fMsg" role="alert"></span></div>
     </form>`;
+  fillQs(editing ? c.questions : null);
 }
+// The five question rows. A new business takes them from the chosen type; an existing one keeps its own.
+function fillQs(qs) {
+  if (!qs) { const ind = industries.find((x) => x.id === ($('#fInd') || {}).value) || industries[0]; qs = ind ? ind.questions : []; }
+  $('#qRows').innerHTML = qs.map((q, i) => `<div class="row" style="flex-wrap:nowrap;gap:8px"><span class="mono" style="width:1.2em">${i + 1}</span>
+    <input data-ql="${i}" type="text" maxlength="40" value="${esc(q.label)}" aria-label="Question ${i + 1} name" style="flex:1;min-width:0">
+    <input data-qh="${i}" type="text" maxlength="80" value="${esc(q.hint || '')}" aria-label="Question ${i + 1} hint" placeholder="Short hint (optional)" style="flex:1.4;min-width:0"></div>`).join('');
+}
+const readQs = () => [0, 1, 2, 3, 4].map((i) => ({ label: ($(`[data-ql="${i}"]`) || {}).value || '', hint: ($(`[data-qh="${i}"]`) || {}).value || '' }));
 function renderAccount() {
   $('#main').innerHTML = `
     <div class="grid2">
@@ -342,6 +352,7 @@ $('#main').addEventListener('click', async (e) => {
   }
 });
 $('#main').addEventListener('change', async (e) => {
+  if (e.target.id === 'fInd') { fillQs(null); return; }
   const t = e.target; if (!t.dataset.reqstatus) return;
   try { await api('admin/requests', { method: 'PATCH', body: JSON.stringify({ id: t.dataset.reqstatus, status: t.value }) }); loadRequests(); }
   catch (err) { reqMsg = err.message; renderRequests(); }
@@ -360,7 +371,7 @@ $('#main').addEventListener('submit', async (e) => {
     try {
       const c = await api('admin/clients', { method: 'POST', body: JSON.stringify({
         id: editing?.id, name: $('#fName').value, google: $('#fGoogle').value, contact: $('#fContact').value,
-        color: $('#fColor').value, ...($('#fAuto') ? { autoGoogle: $('#fAuto').checked } : {}), trialDays: $('#fTrial') ? $('#fTrial').value : undefined, facebook: $('#fFb').value.trim(), tripadvisor: $('#fTa').value.trim(), fbOn: $('#fFbOn').checked, taOn: $('#fTaOn').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, loginEmail: email, password: pw }) });
+        color: $('#fColor').value, ...($('#fAuto') ? { autoGoogle: $('#fAuto').checked } : {}), trialDays: $('#fTrial') ? $('#fTrial').value : undefined, facebook: $('#fFb').value.trim(), tripadvisor: $('#fTa').value.trim(), fbOn: $('#fFbOn').checked, taOn: $('#fTaOn').checked, slug: $('#fSlug').value.trim().toLowerCase(), industry: $('#fInd') ? $('#fInd').value : undefined, questions: readQs(), loginEmail: email, password: pw }) });
       if (pw) { prefill = null; creds = { name: c.name, email: c.loginEmail, password: pw }; renderForm(); }
       else { editing = null; prefill = null; go('list'); }
     } catch (err) { $('#fMsg').textContent = err.message; $('#fMsg').scrollIntoView({ block: 'center', behavior: 'smooth' }); }

@@ -32,6 +32,12 @@ const INDUSTRIES = [
     { k: "service", label: "Waiter service", hint: "Friendly and attentive staff" },
     { k: "present", label: "Meal presentation", hint: "How your food looked" },
     { k: "timing", label: "Meal timing", hint: "How long your food took" } ] },
+  { id: "coffee", name: "Coffee shops & counter service", questions: [
+    { label: "Drink & food quality", hint: "Taste, temperature and freshness" },
+    { label: "Speed", hint: "How fast your order was ready" },
+    { label: "Order accuracy", hint: "Got exactly what you ordered" },
+    { label: "Friendly staff", hint: "Welcoming and helpful at the counter" },
+    { label: "Cleanliness & vibe", hint: "Tables, counters and seating" } ] },
   { id: "salon", name: "Salons & barbers", questions: [
     { label: "Your result", hint: "Did you get the look you asked for" },
     { label: "Your stylist", hint: "Who did your service" },
@@ -95,6 +101,12 @@ const INDUSTRIES = [
 ].map((ind) => ({ ...ind, questions: ind.questions.map((q, i) => ({ k: q.k || `q${i + 1}`, label: q.label, hint: q.hint })) }));
 const industry = (id) => INDUSTRIES.find((x) => x.id === id) || null;
 const DEFAULT_QS = INDUSTRIES[0].questions;
+// Applies edited wording to a business's five questions. The keys stay the same so scores keep lining up.
+const customQs = (base, edits) => base.map((q, i) => {
+  const e = Array.isArray(edits) ? edits[i] || {} : {};
+  const label = clean(e.label, 40), hint = clean(e.hint, 80);
+  return { k: q.k, label: label || q.label, hint: "hint" in e ? hint : q.hint };
+});
 const questionsOf = (c) => (Array.isArray(c.questions) && c.questions.length === 5 ? c.questions : DEFAULT_QS);
 
 const RESERVED = new Set(["login", "signup", "admin", "api", "review", "dashboard", "home", "about", "settings",
@@ -427,9 +439,10 @@ export default async (req) => {
       if ("taOn" in b) c.taOn = !!b.taOn;
       // Industry and questions are set when the business is created. Changing them later would
       // mix old and new scores, so an existing business keeps its questions.
+      if (existing && Array.isArray(b.questions)) c.questions = customQs(existing.questions || DEFAULT_QS, b.questions);
       if (!existing) {
         const ind = industry(b.industry) || INDUSTRIES[0];
-        c.industry = ind.id; c.questions = ind.questions;
+        c.industry = ind.id; c.questions = customQs(ind.questions, b.questions);
         const days = Math.min(90, Math.max(1, parseInt(b.trialDays, 10) || TRIAL_DAYS));
         c.plan = "trial"; c.trialEnds = new Date(Date.now() + days * DAY).toISOString();
       }
