@@ -284,7 +284,6 @@ export default async (req) => {
 
   try {
     /* ================= Public ================= */
-    if (route === "save-check" && m === "GET") return json((await s.get("debug/lastfail", { type: "json" })) || {});
     if (route === "industries" && m === "GET") return json({ industries: INDUSTRIES });
 
     if (route === "support" && m === "GET") {
@@ -374,6 +373,8 @@ export default async (req) => {
     }
 
     if (route === "login" && m === "POST") {
+      // Slows password guessing: at most 20 sign-in attempts per hour from one connection.
+      if (await overLimit(s, req, "login", 20)) return json({ error: "Too many sign-in attempts. Wait a while and try again." }, 429);
       const b = await readBody();
       const pw = String(b.password || "").trim();
       if (b.role === "owner") {
@@ -415,7 +416,7 @@ export default async (req) => {
 
     if (route === "admin/clients" && m === "POST") {
       const b = await readBody();
-      // Records why a save was refused (no passwords or emails), readable at /api/save-check.
+      // Records why a save was refused (no passwords or emails), for troubleshooting.
       const fail = async (error, code = 400) => {
         await s.setJSON("debug/lastfail", { at: new Date().toISOString(), error, slug: String(b.slug || ""), pwLen: String(b.password || "").trim().length, hasEmail: !!String(b.loginEmail || "").trim(), editing: !!b.id }).catch(() => {});
         return json({ error }, code);
